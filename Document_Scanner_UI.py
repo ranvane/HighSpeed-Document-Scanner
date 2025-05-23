@@ -56,13 +56,14 @@ class Main_Ui_Frame ( wx.Frame ):
         bSizer8.Add( self.m_checkBox_detect_squares, 0, wx.ALL, 5 )
 
         self.m_checkBox_rectify_surface = wx.CheckBox( self, wx.ID_ANY, _(u"曲面展平"), wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_checkBox_rectify_surface.SetValue(True)
         bSizer8.Add( self.m_checkBox_rectify_surface, 0, wx.ALL, 5 )
 
-        self.m_button_left_roate = wx.Button( self, wx.ID_ANY, _(u"左旋90"), wx.DefaultPosition, wx.DefaultSize, 0 )
-        bSizer8.Add( self.m_button_left_roate, 0, wx.ALL, 5 )
+        self.m_button_left_rotation = wx.Button( self, wx.ID_ANY, _(u"左旋90"), wx.DefaultPosition, wx.DefaultSize, 0 )
+        bSizer8.Add( self.m_button_left_rotation, 0, wx.ALL, 5 )
 
-        self.m_button_right_roate = wx.Button( self, wx.ID_ANY, _(u"右旋90"), wx.DefaultPosition, wx.DefaultSize, 0 )
-        bSizer8.Add( self.m_button_right_roate, 0, wx.ALL, 5 )
+        self.m_button_right_rotation = wx.Button( self, wx.ID_ANY, _(u"右旋90"), wx.DefaultPosition, wx.DefaultSize, 0 )
+        bSizer8.Add( self.m_button_right_rotation, 0, wx.ALL, 5 )
 
 
         top_left_bSizer.Add( bSizer8, 0, wx.EXPAND, 5 )
@@ -93,9 +94,13 @@ class Main_Ui_Frame ( wx.Frame ):
         bottom_Sizer = wx.BoxSizer( wx.HORIZONTAL )
 
         self.m_button_take_photo = wx.Button( self, wx.ID_ANY, _(u"拍照"), wx.DefaultPosition, wx.Size( 75,75 ), 0 )
+        self.m_button_take_photo.SetToolTip( _(u"保存原始图像。") )
+
         bottom_Sizer.Add( self.m_button_take_photo, 0, wx.ALL, 5 )
 
         self.m_button_take_doc = wx.Button( self, wx.ID_ANY, _(u"文档"), wx.DefaultPosition, wx.Size( 75,75 ), 0 )
+        self.m_button_take_doc.SetToolTip( _(u"保存提取、矫正后的文档图像。") )
+
         bottom_Sizer.Add( self.m_button_take_doc, 0, wx.ALL, 5 )
 
         self.m_button_merge_photos = wx.Button( self, wx.ID_ANY, _(u"合并图片"), wx.DefaultPosition, wx.Size( 75,75 ), 0 )
@@ -107,6 +112,15 @@ class Main_Ui_Frame ( wx.Frame ):
         self.m_button_take_pdf_doc = wx.Button( self, wx.ID_ANY, _(u"单页pdf"), wx.DefaultPosition, wx.Size( 75,75 ), 0 )
         bottom_Sizer.Add( self.m_button_take_pdf_doc, 0, wx.ALL, 5 )
 
+        self.m_button_take_mutip_pdf_doc = wx.Button( self, wx.ID_ANY, _(u"多页pdf"), wx.DefaultPosition, wx.Size( 75,75 ), 0 )
+        bottom_Sizer.Add( self.m_button_take_mutip_pdf_doc, 0, wx.ALL, 5 )
+
+
+        bottom_Sizer.Add( ( 0, 0), 1, wx.EXPAND, 5 )
+
+        self.m_button_setting = wx.Button( self, wx.ID_ANY, _(u"设置"), wx.DefaultPosition, wx.Size( 75,75 ), 0 )
+        bottom_Sizer.Add( self.m_button_setting, 0, wx.ALL, 5 )
+
 
         bSizer1.Add( bottom_Sizer, 0, wx.EXPAND, 5 )
 
@@ -114,14 +128,22 @@ class Main_Ui_Frame ( wx.Frame ):
         self.SetSizer( bSizer1 )
         self.Layout()
         bSizer1.Fit( self )
-        self.m_timer = wx.Timer()
-        self.m_timer.SetOwner( self, self.m_timer.GetId() )
 
         self.Centre( wx.BOTH )
 
         # Connect Events
         self.Bind( wx.EVT_CLOSE, self.on_close )
         self.m_checkBox_detect_squares.Bind( wx.EVT_CHECKBOX, self.on_detect_squares )
+        self.m_checkBox_rectify_surface.Bind( wx.EVT_CHECKBOX, self.on_rectify_surface )
+        self.m_button_left_rotation.Bind( wx.EVT_BUTTON, self.on_left_rotation )
+        self.m_button_right_rotation.Bind( wx.EVT_BUTTON, self.on_right_rotation )
+        self.m_button_take_photo.Bind( wx.EVT_BUTTON, self.on_take_photo )
+        self.m_button_take_doc.Bind( wx.EVT_BUTTON, self.on_take_document )
+        self.m_button_merge_photos.Bind( wx.EVT_BUTTON, self.on_merge_photos )
+        self.m_button_scan_qr_code.Bind( wx.EVT_BUTTON, self.on_scan_qr_code )
+        self.m_button_take_pdf_doc.Bind( wx.EVT_BUTTON, self.on_take_pdf_doc )
+        self.m_button_take_mutip_pdf_doc.Bind( wx.EVT_BUTTON, self.on_take_mutip_pdf_doc )
+        self.m_button_setting.Bind( wx.EVT_BUTTON, self.on_setting )
 
     def __del__( self ):
         pass
@@ -133,5 +155,64 @@ class Main_Ui_Frame ( wx.Frame ):
 
     def on_detect_squares( self, event ):
         event.Skip()
+
+    def on_rectify_surface( self, event ):
+        event.Skip()
+
+    def on_left_rotation( self, event ):
+        event.Skip()
+
+    def on_right_rotation( self, event ):
+        event.Skip()
+
+    def on_take_photo( self, event ):
+        event.Skip()
+
+    def on_take_document( self, event ):
+        event.Skip()
+
+    def on_merge_photos( self, event ):
+        event.Skip()
+
+    def on_scan_qr_code( self, event ):
+        event.Skip()
+
+    def on_take_pdf_doc( self, event ):
+        event.Skip()
+
+    def on_take_mutip_pdf_doc( self, event ):
+        event.Skip()
+
+    def on_setting( self, event ):
+        event.Skip()
+
+
+###########################################################################
+## Class Setting_Dialog
+###########################################################################
+
+class Setting_Dialog ( wx.Dialog ):
+
+    def __init__( self, parent ):
+        wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = wx.EmptyString, pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_DIALOG_STYLE )
+
+        self.SetSizeHints( wx.DefaultSize, wx.DefaultSize )
+
+        bSizer8 = wx.BoxSizer( wx.VERTICAL )
+
+        bSizer9 = wx.BoxSizer( wx.VERTICAL )
+
+
+        bSizer8.Add( bSizer9, 1, wx.EXPAND, 5 )
+
+
+        self.SetSizer( bSizer8 )
+        self.Layout()
+        bSizer8.Fit( self )
+
+        self.Centre( wx.BOTH )
+
+    def __del__( self ):
+        pass
 
 
