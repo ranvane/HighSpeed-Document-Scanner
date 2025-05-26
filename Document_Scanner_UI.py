@@ -194,16 +194,90 @@ class Main_Ui_Frame ( wx.Frame ):
 class Setting_Dialog ( wx.Dialog ):
 
     def __init__( self, parent ):
-        wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = wx.EmptyString, pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_DIALOG_STYLE )
+        wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = _(u"设置"), pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_DIALOG_STYLE )
 
         self.SetSizeHints( wx.DefaultSize, wx.DefaultSize )
 
         bSizer8 = wx.BoxSizer( wx.VERTICAL )
 
-        bSizer9 = wx.BoxSizer( wx.VERTICAL )
+        bSizer9 = wx.BoxSizer( wx.HORIZONTAL )
+
+        self.m_staticText1 = wx.StaticText( self, wx.ID_ANY, _(u"保存路径："), wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText1.Wrap( -1 )
+
+        bSizer9.Add( self.m_staticText1, 0, wx.ALL, 5 )
+
+        self.m_save_path = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 400,-1 ), 0 )
+        bSizer9.Add( self.m_save_path, 0, wx.ALL, 5 )
+
+        self.m_select_save_path = wx.Button( self, wx.ID_ANY, _(u"选择"), wx.DefaultPosition, wx.DefaultSize, 0 )
+        bSizer9.Add( self.m_select_save_path, 0, wx.ALL, 5 )
 
 
-        bSizer8.Add( bSizer9, 1, wx.EXPAND, 5 )
+        bSizer8.Add( bSizer9, 0, wx.EXPAND, 5 )
+
+        sbSizer1 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, _(u"命名方式：") ), wx.VERTICAL )
+
+        bSizer91 = wx.BoxSizer( wx.HORIZONTAL )
+
+        self.m_radioBtn_data_and_numbers = wx.RadioButton( sbSizer1.GetStaticBox(), wx.ID_ANY, _(u"日期+数字"), wx.DefaultPosition, wx.DefaultSize, 0 )
+        bSizer91.Add( self.m_radioBtn_data_and_numbers, 1, wx.ALL, 5 )
+
+        self.m_staticText7 = wx.StaticText( sbSizer1.GetStaticBox(), wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText7.Wrap( -1 )
+
+        bSizer91.Add( self.m_staticText7, 1, wx.ALL, 5 )
+
+        self.m_radioBtn_datatime = wx.RadioButton( sbSizer1.GetStaticBox(), wx.ID_ANY, _(u"年月日_时分秒"), wx.DefaultPosition, wx.DefaultSize, 0 )
+        bSizer91.Add( self.m_radioBtn_datatime, 1, wx.ALL, 5 )
+
+
+        sbSizer1.Add( bSizer91, 1, wx.EXPAND, 5 )
+
+
+        bSizer8.Add( sbSizer1, 1, wx.EXPAND, 5 )
+
+        bSizer11 = wx.BoxSizer( wx.HORIZONTAL )
+
+        self.m_staticText4 = wx.StaticText( self, wx.ID_ANY, _(u"摄像头1分辨率："), wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText4.Wrap( -1 )
+
+        bSizer11.Add( self.m_staticText4, 0, wx.ALL, 5 )
+
+        m_choice_camera_resolution1Choices = []
+        self.m_choice_camera_resolution1 = wx.Choice( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice_camera_resolution1Choices, 0 )
+        self.m_choice_camera_resolution1.SetSelection( 0 )
+        bSizer11.Add( self.m_choice_camera_resolution1, 0, wx.ALL, 5 )
+
+        self.m_button_select_camera_resolution1 = wx.Button( self, wx.ID_ANY, _(u"确定"), wx.DefaultPosition, wx.DefaultSize, 0 )
+        bSizer11.Add( self.m_button_select_camera_resolution1, 0, wx.ALL, 5 )
+
+        self.m_button_auto_check_camera_resolution1 = wx.Button( self, wx.ID_ANY, _(u"检测支持的分辨率"), wx.DefaultPosition, wx.DefaultSize, 0 )
+        bSizer11.Add( self.m_button_auto_check_camera_resolution1, 0, wx.ALL, 5 )
+
+
+        bSizer8.Add( bSizer11, 0, wx.EXPAND, 5 )
+
+        bSizer111 = wx.BoxSizer( wx.HORIZONTAL )
+
+        self.m_staticText41 = wx.StaticText( self, wx.ID_ANY, _(u"摄像头2分辨率："), wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.m_staticText41.Wrap( -1 )
+
+        bSizer111.Add( self.m_staticText41, 0, wx.ALL, 5 )
+
+        m_choice_camera_resolution2Choices = []
+        self.m_choice_camera_resolution2 = wx.Choice( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice_camera_resolution2Choices, 0 )
+        self.m_choice_camera_resolution2.SetSelection( 0 )
+        bSizer111.Add( self.m_choice_camera_resolution2, 0, wx.ALL, 5 )
+
+        self.m_button_select_camera_resolution2 = wx.Button( self, wx.ID_ANY, _(u"确定"), wx.DefaultPosition, wx.DefaultSize, 0 )
+        bSizer111.Add( self.m_button_select_camera_resolution2, 0, wx.ALL, 5 )
+
+        self.m_button_auto_check_camera_resolution2 = wx.Button( self, wx.ID_ANY, _(u"检测支持的分辨率"), wx.DefaultPosition, wx.DefaultSize, 0 )
+        bSizer111.Add( self.m_button_auto_check_camera_resolution2, 0, wx.ALL, 5 )
+
+
+        bSizer8.Add( bSizer111, 0, wx.EXPAND, 5 )
 
 
         self.SetSizer( bSizer8 )
