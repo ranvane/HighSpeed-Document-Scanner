@@ -65,15 +65,21 @@ def get_camera_resolution(camera_index=0):
         (width, height) 如果成功
         None 如果打开失败
     """
-    cap = cv2.VideoCapture(camera_index)
-    if not cap.isOpened():
-        logger.error("无法打开摄像头")
-        return None
+    try:
+        cap = cv2.VideoCapture(camera_index)
+        if not cap.isOpened():
+            logger.error(f"无法打开摄像头 {camera_index}")
+            return None
 
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    cap.release()
-    return width, height
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        cap.release()
+        return width, height
+    except Exception as e:
+        logger.error(f"获取摄像头 {camera_index} 分辨率时出错: {e}")
+        if 'cap' in locals() and cap.isOpened():
+            cap.release()
+        return None
 
 
 def set_camera_resolution(cap, width, height):
@@ -109,8 +115,6 @@ def set_camera_resolution(cap, width, height):
         actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-        
-
         # 检查设置是否成功
         if actual_width == width and actual_height == height:
             logger.info(f"成功设置摄像头分辨率为: {actual_width} x {actual_height}")
@@ -127,17 +131,23 @@ def count_cameras():
     '''
     检测电脑上的摄像头数量
     :return: 摄像头数量
-    
     '''
     count = 0
     for i in range(10):  # 尝试前10个ID
-        cap = cv2.VideoCapture(i)
-        if not cap.read()[0]:
-            break
-        else:
-            count += 1
-        cap.release()
+        try:
+            cap = cv2.VideoCapture(i)
+            ret, _ = cap.read()
+            if not ret:
+                break
+            else:
+                count += 1
+        except Exception as e:
+            logger.error(f"尝试访问摄像头 {i} 时出错: {e}")
+        finally:
+            if 'cap' in locals() and cap.isOpened():
+                cap.release()
     return count
+
 
 
 def get_camera_resolution_list(camera_index=0,
@@ -186,25 +196,35 @@ def get_camera_resolution_list(camera_index=0,
         default_resolution_list
 def preprocess_image(img):
     """图像预处理：灰度转换、自适应直方图均衡化、自适应高斯模糊去噪"""
-    # 灰度转换
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    try:
+        # 检查输入是否为有效的 numpy 数组
+        if not isinstance(img, np.ndarray):
+            raise TypeError("输入必须是 numpy.ndarray 类型的图像")
+        if img.ndim not in [2, 3]:
+            raise ValueError("输入图像维度必须是 2 或 3")
 
-    # 自适应直方图均衡化
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    enhanced_gray = clahe.apply(gray)
+        # 灰度转换
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # 计算图像标准差，自适应调整高斯模糊核大小
-    std_dev = np.std(enhanced_gray)
-    if std_dev < 20:
-        kernel_size = (7, 7)
-    elif std_dev < 50:
-        kernel_size = (5, 5)
-    else:
-        kernel_size = (3, 3)
+        # 自适应直方图均衡化
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        enhanced_gray = clahe.apply(gray)
 
-    # 自适应高斯模糊去噪
-    blurred = cv2.GaussianBlur(enhanced_gray, kernel_size, 0)
-    return enhanced_gray, blurred
+        # 计算图像标准差，自适应调整高斯模糊核大小
+        std_dev = np.std(enhanced_gray)
+        if std_dev < 20:
+            kernel_size = (7, 7)
+        elif std_dev < 50:
+            kernel_size = (5, 5)
+        else:
+            kernel_size = (3, 3)
+
+        # 自适应高斯模糊去噪
+        blurred = cv2.GaussianBlur(enhanced_gray, kernel_size, 0)
+        return enhanced_gray, blurred
+    except Exception as e:
+        logger.error(f"图像预处理出错: {e}")
+        return None, None
 
 def detect_edges(blurred):
     """
@@ -216,23 +236,33 @@ def detect_edges(blurred):
     Returns:
         numpy.ndarray: 经过边缘检测和形态学膨胀操作后的图像
     """
-    # 计算图像的中位数，用于后续自适应阈值的计算
-    median = np.median(blurred)
+    try:
+        # 检查输入是否为有效的 numpy 数组
+        if not isinstance(blurred, np.ndarray):
+            raise TypeError("输入必须是 numpy.ndarray 类型的图像")
+        if blurred.ndim not in [2]:
+            raise ValueError("输入图像维度必须是 2")
 
-    # 依据中位数计算 Canny 边缘检测的高低阈值
-    # 下限阈值为中位数的 67%，且不小于 0
-    lower = int(max(0, (1.0 - 0.33) * median))
-    # 上限阈值为中位数的 133%，且不大于 255
-    upper = int(min(255, (1.0 + 0.33) * median))
+        # 计算图像的中位数，用于后续自适应阈值的计算
+        median = np.median(blurred)
 
-    # 使用计算得到的自适应阈值进行 Canny 边缘检测
-    edges = cv2.Canny(blurred, lower, upper)
+        # 依据中位数计算 Canny 边缘检测的高低阈值
+        # 下限阈值为中位数的 67%，且不小于 0
+        lower = int(max(0, (1.0 - 0.33) * median))
+        # 上限阈值为中位数的 133%，且不大于 255
+        upper = int(min(255, (1.0 + 0.33) * median))
 
-    # 定义一个 3x3 的结构元素，用于形态学膨胀操作
-    kernel = np.ones((3, 3), np.uint8)
-    # 对边缘图像进行形态学膨胀操作，连接断开的边缘
-    dilated_edges = cv2.dilate(edges, kernel, iterations=1)
-    return dilated_edges
+        # 使用计算得到的自适应阈值进行 Canny 边缘检测
+        edges = cv2.Canny(blurred, lower, upper)
+
+        # 定义一个 3x3 的结构元素，用于形态学膨胀操作
+        kernel = np.ones((3, 3), np.uint8)
+        # 对边缘图像进行形态学膨胀操作，连接断开的边缘
+        dilated_edges = cv2.dilate(edges, kernel, iterations=1)
+        return dilated_edges
+    except Exception as e:
+        logger.error(f"边缘检测出错: {e}")
+        return None
 
 def find_document_contour(edges, original_img):
     """
@@ -240,12 +270,10 @@ def find_document_contour(edges, original_img):
 
     参数:
         edges (numpy.ndarray): 经过边缘检测后的图像，包含图像的边缘信息
-        original_img (numpy.ndarray): 原始输入图像，用于在其上绘制轮廓
-        draw_contours (bool): 是否在原始图像上绘制检测到的轮廓，默认为 False
+        original_img (numpy.ndarray): 原始输入图像，用于复制操作，不在其上绘制轮廓
 
     返回:
-        document_contour (numpy.ndarray): 最可能的纸张轮廓，如果未找到则为 None
-        img_with_contours (numpy.ndarray): 带有绘制轮廓(取决于draw_contours)的原始图像副本
+        numpy.ndarray: 最可能的纸张轮廓，如果未找到则为 None
     """
     # 查找轮廓
     # 使用 cv2.findContours 函数在边缘图像中查找外部轮廓
