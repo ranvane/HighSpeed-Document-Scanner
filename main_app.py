@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 import cv2
 from Document_Scanner_UI import Main_Ui_Frame
-from cammer_utils import get_camera_max_resolution, rotate_frame,count_cameras, set_camera_resolution, detect_contour, get_camera_resolution_list,draw_boxes_on_image,transform_document
+from cammer_utils import get_camera_max_resolution, rotate_frame,count_cameras, set_camera_resolution, detect_contour, get_camera_supported_resolutions,draw_boxes_on_image,transform_document
 from loguru import logger
 
 # 获取当前脚本所在的目录
@@ -31,7 +31,7 @@ class Main_Frame(Main_Ui_Frame):
         camera_nums = count_cameras()
         if camera_nums > 0:
             # 根据指定摄像头的分辨率列表，返回一个分辨率列表：从最大分辨率开始，直至720p。
-            self.resolution_list = get_camera_resolution_list(0)
+            self.resolution_list = get_camera_supported_resolutions(0)
             # 初始化摄像头选择下拉框
             self.m_comboBox_select_camera.SetItems(
                 [str(i) for i in range(camera_nums + 1)])
@@ -39,7 +39,7 @@ class Main_Frame(Main_Ui_Frame):
 
             self.camera_index = int(
                 self.m_comboBox_select_camera.GetValue())  #选择的摄像头索引
-            self.camera_resolution_list = get_camera_resolution_list(
+            self.camera_resolution_list = get_camera_supported_resolutions(
                 self.camera_index)  # 获取摄像头支持的分辨率列表
             logger.info(
                 f"摄像头-- {self.camera_index} 支持的分辨率列表: {self.camera_resolution_list}"

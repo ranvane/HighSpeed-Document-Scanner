@@ -124,19 +124,6 @@ def set_camera_resolution(cap, width, height):
         False 如果打开失败
     """
     try:
-
-        # 获取设置后的分辨率
-        camera_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        camera_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-        #计算最大分辨率的宽高比
-        max_ratio = camera_width / camera_height
-
-        # 计算高度
-        _height = int(width / max_ratio)
-        if _height != height:
-            height = _height
-
         # 设置分辨率
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
@@ -178,6 +165,7 @@ def count_cameras():
                 cap.release()
     return count
 
+
 def get_camera(index=0):
     '''
     获取指定摄像头的视频捕获对象
@@ -194,9 +182,10 @@ def get_camera(index=0):
         logger.error(f"获取摄像头 {index} 时出错: {e}")
         return None
 
-def get_camera_resolution_list(camera_index=0,
-                               max_width=1920,
-                               max_height=1080):
+
+def get_camera_supported_resolutions(camera_index=0,
+                                     max_width=1920,
+                                     max_height=1080):
     """
     根据指定摄像头的分辨率列表，返回一个分辨率列表：从最大分辨率开始，直至720p。
     参数:
@@ -204,40 +193,79 @@ def get_camera_resolution_list(camera_index=0,
         max_width (int): 最大宽度
         max_height (int): 最大高度
     返回:
-        resolution_list (list): 分辨率列表，每个元素是一个元组 (width, height)  
+        resolution_list (list): 分辨率列表，每个元素是一个元组 (width, height)
     """
     # 初始化默认分辨率列表
-    default_resolution_list = [(3264, 2448), (2592, 1994), (2048, 1536),
-                               (1920, 1080), (1600, 1200), (1280, 960),
-                               (1280, 720), (1024, 768), (800, 600),
-                               (640, 480)]
+    default_resolution_list = [(3264, 2448), (2048, 1536), (1920, 1080), (1600, 1200), (1280, 960), (1280, 720),
+                               (1024, 768), (800, 600), (640, 480)]
     try:
+        # 检查输入参数类型
+        if not isinstance(camera_index, int):
+            logger.error("camera_index 必须是整数类型")
+        if not isinstance(max_width, int):
+            logger.error("max_width 必须是整数类型")
+        if not isinstance(max_height, int):
+            logger.error("max_height 必须是整数类型")
+
+        # 检查输入参数范围
+        if camera_index < 0:
+            logger.error("camera_index 不能为负数")
+        if max_width <= 0:
+            logger.error("max_width 必须是正整数")
+        if max_height <= 0:
+            logger.error("max_height 必须是正整数")
+
         # 初始化默认分辨率宽度列表
         resolution_widths = [
             3264, 2592, 2048, 1920, 1600, 1280, 1024, 800, 640
         ]
-        camera_width, camera_height = get_camera_max_resolution(camera_index)
-
-        #计算最大分辨率的宽高比
-        max_ratio = camera_width / camera_height
-        # 初始化分辨率列表
         resolution_list = []
+        # 打开摄像头
+        cap = get_camera(camera_index)
+        if cap is None:
+            logger.error(f"无法打开摄像头 {camera_index}")
+            return default_resolution_list
 
         for width in resolution_widths:
-            # 计算高度
-            height = int(width / max_ratio)
-            # 检查分辨率是否在指定范围内
-            if width <= camera_width:
-                resolution_list.append((width, height))
-            else:
-                break
-        if resolution_list == []:
-            logger.debug(f"摄像头 返回默认分辨率列表: {default_resolution_list}")
-            resolution_list = default_resolution_list
+            for height in [2448, 1994, 1536, 1080, 1200, 1080, 960, 768, 720, 600, 480]:
+                # # 检查分辨率是否在指定范围内
+                # if width > max_width or height > max_height:
+                #     continue
+                cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+                actual_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+                actual_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+                if actual_width == width and actual_height == height:
+                    resolution_list.append((width, height))
+        # 去重操作
+        unique_resolutions = []
+        for res in resolution_list:
+            if res not in unique_resolutions:
+                unique_resolutions.append(res)
+        resolution_list = unique_resolutions
+        # 确保分辨率列表按从大到小的顺序排列
+        resolution_list.sort(key=lambda x: x[0] * x[1], reverse=True)
+
+        # 确保摄像头资源被释放
+        cap.release()
+
+        if not resolution_list:
+            logger.warning("未找到支持的分辨率，返回默认分辨率列表")
+            return default_resolution_list
+
         return resolution_list
+
+    except IOError as ioe:
+        logger.error(f"摄像头操作出错: {ioe}")
+        return default_resolution_list
     except Exception as e:
-        logger.debug(f"{e}摄像头 返回默认分辨率列表: {default_resolution_list}")
-        default_resolution_list
+        logger.error(f"获取摄像头支持的分辨率时出现未知错误: {e}")
+        return default_resolution_list
+    finally:
+        if 'cap' in locals() and cap.isOpened():
+            cap.release()
+
+
 def preprocess_image(img):
     """图像预处理：灰度转换、自适应直方图均衡化、自适应高斯模糊去噪"""
     try:
@@ -269,6 +297,7 @@ def preprocess_image(img):
     except Exception as e:
         logger.error(f"图像预处理出错: {e}")
         return None, None
+
 
 def detect_edges(blurred):
     """
@@ -420,6 +449,7 @@ def draw_boxes_on_image(frame, boxes, color=(0, 255, 0), thickness=5):
         logger.error(f"在图像上绘制方框时出错: {e}")
         return frame
 
+
 def detect_contour(frame):
     """
     检测图像中的方框并绘制面积最大的边界框
@@ -499,6 +529,7 @@ def order_points(pts):
     except Exception as e:
         logger.error(f"对四个点排序时出错: {e}")
         return None
+
 
 def four_point_transform(image, pts):
     """
@@ -603,7 +634,12 @@ def transform_document(frame):
     except Exception as e:
         logger.error(f"文档透视变换过程中出错: {e}")
         return frame
+
+
 if __name__ == "__main__":
-    print(count_cameras())
+    # print(count_cameras())
     capture = get_camera(0)
-    set_camera_resolution(capture,1920, 1440)
+    # set_camera_resolution(capture,1920, 1440)
+
+    set_camera_resolution(capture, 1920, 1080)
+    capture.release()
