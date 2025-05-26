@@ -84,7 +84,7 @@ def get_camera_max_resolution(camera_id=0):
             cap.release()
 
 
-def get_camera_resolution(camera_index=0):
+def get_camera_resolution(cap):
     """
     获取指定摄像头的实际分辨率（宽度, 高度）
 
@@ -96,19 +96,11 @@ def get_camera_resolution(camera_index=0):
         None 如果打开失败
     """
     try:
-        cap = cv2.VideoCapture(camera_index)
-        if not cap.isOpened():
-            logger.error(f"无法打开摄像头 {camera_index}")
-            return None
-
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        cap.release()
         return width, height
     except Exception as e:
-        logger.error(f"获取摄像头 {camera_index} 分辨率时出错: {e}")
-        if 'cap' in locals() and cap.isOpened():
-            cap.release()
+        logger.error(f"获取摄像头 分辨率时出错: {e}")
         return None
 
 
@@ -643,3 +635,4 @@ if __name__ == "__main__":
 
     set_camera_resolution(capture, 1920, 1080)
     capture.release()
+    print(get_camera_resolution())
