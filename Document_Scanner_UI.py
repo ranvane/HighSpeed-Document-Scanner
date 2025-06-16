@@ -9,6 +9,7 @@
 
 import wx
 import wx.xrc
+from ThumbnailGallery import ThumbnailGallery
 
 import gettext
 _ = gettext.gettext
@@ -81,17 +82,8 @@ class Main_Ui_Frame ( wx.Frame ):
 
         top_right_bSizer = wx.BoxSizer( wx.VERTICAL )
 
-        self.m_bmToggleBtn1 = wx.BitmapToggleButton( self, wx.ID_ANY, wx.NullBitmap, wx.DefaultPosition, wx.DefaultSize, 0 )
-        top_right_bSizer.Add( self.m_bmToggleBtn1, 0, wx.ALL, 5 )
-
-        self.m_bmToggleBtn2 = wx.BitmapToggleButton( self, wx.ID_ANY, wx.NullBitmap, wx.DefaultPosition, wx.DefaultSize, 0 )
-        top_right_bSizer.Add( self.m_bmToggleBtn2, 0, wx.ALL, 5 )
-
-        self.m_bmToggleBtn3 = wx.BitmapToggleButton( self, wx.ID_ANY, wx.NullBitmap, wx.DefaultPosition, wx.DefaultSize, 0 )
-        top_right_bSizer.Add( self.m_bmToggleBtn3, 0, wx.ALL, 5 )
-
-        self.m_bmToggleBtn4 = wx.BitmapToggleButton( self, wx.ID_ANY, wx.NullBitmap, wx.DefaultPosition, wx.DefaultSize, 0 )
-        top_right_bSizer.Add( self.m_bmToggleBtn4, 0, wx.ALL, 5 )
+        self.m_thumbnailgallery = ThumbnailGallery(self)
+        top_right_bSizer.Add( self.m_thumbnailgallery, 1, wx.ALL|wx.EXPAND, 5 )
 
 
         top_Sizer.Add( top_right_bSizer, 1, wx.EXPAND, 5 )

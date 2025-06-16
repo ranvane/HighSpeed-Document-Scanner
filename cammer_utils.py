@@ -42,7 +42,7 @@ def rotate_frame(image, frame_rotation):
     return image
 
 
-def get_camera_max_resolution(camera_id=0):
+def get_camera_max_resolution(cap):
     """
     获取指定摄像头的最大分辨率
 
@@ -53,11 +53,6 @@ def get_camera_max_resolution(camera_id=0):
         None: 若打开摄像头失败或获取分辨率失败
     """
     try:
-        # 尝试打开摄像头
-        cap = cv2.VideoCapture(camera_id)
-        if not cap.isOpened():
-            logger.error(f"无法打开摄像头 {camera_id}")
-            return None
 
         # 设置为高分辨率（如果支持）
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 10000)
@@ -69,19 +64,15 @@ def get_camera_max_resolution(camera_id=0):
 
         # 检查获取的分辨率是否有效
         if width <= 0 or height <= 0:
-            logger.error(f"无法获取摄像头 {camera_id} 的有效分辨率")
+            logger.error(f"无法获取摄像头的有效分辨率")
             return None
 
-        logger.debug(f"摄像头 {camera_id} 最大支持分辨率: {width}x{height}")
+        logger.debug(f"摄像头最大支持分辨率: {width}x{height}")
         return width, height
     except Exception as e:
         # 捕获并记录异常信息
-        logger.error(f"获取摄像头 {camera_id} 最大分辨率时出错: {e}")
+        logger.error(f"获取摄像头最大分辨率时出错: {e}")
         return None
-    finally:
-        # 确保摄像头资源被释放
-        if 'cap' in locals() and cap.isOpened():
-            cap.release()
 
 
 def get_camera_resolution(cap):
@@ -175,37 +166,26 @@ def get_camera(index=0):
         return None
 
 
-def get_camera_supported_resolutions(camera_index=0,
-                                     max_width=1920,
-                                     max_height=1080):
+def get_camera_supported_resolutions(cap, max_width=1920, max_height=1080):
     """
     根据指定摄像头的分辨率列表，返回一个分辨率列表：从最大分辨率开始，直至720p。
     参数:
-        camera_index (int): 摄像头编号，默认是 0（主摄）
+        cap: 摄像头对象
         max_width (int): 最大宽度
         max_height (int): 最大高度
     返回:
         resolution_list (list): 分辨率列表，每个元素是一个元组 (width, height)
     """
     # 初始化默认分辨率列表
-    default_resolution_list = [(3264, 2448), (2048, 1536), (1920, 1080), (1600, 1200), (1280, 960), (1280, 720),
+    default_resolution_list = [(3264, 2448), (2048, 1536), (1920, 1080),
+                               (1600, 1200), (1280, 960), (1280, 720),
                                (1024, 768), (800, 600), (640, 480)]
     try:
         # 检查输入参数类型
-        if not isinstance(camera_index, int):
-            logger.error("camera_index 必须是整数类型")
         if not isinstance(max_width, int):
             logger.error("max_width 必须是整数类型")
         if not isinstance(max_height, int):
             logger.error("max_height 必须是整数类型")
-
-        # 检查输入参数范围
-        if camera_index < 0:
-            logger.error("camera_index 不能为负数")
-        if max_width <= 0:
-            logger.error("max_width 必须是正整数")
-        if max_height <= 0:
-            logger.error("max_height 必须是正整数")
 
         # 初始化默认分辨率宽度列表
         resolution_widths = [
@@ -213,13 +193,15 @@ def get_camera_supported_resolutions(camera_index=0,
         ]
         resolution_list = []
         # 打开摄像头
-        cap = get_camera(camera_index)
+
         if cap is None:
-            logger.error(f"无法打开摄像头 {camera_index}")
+            logger.error(f"无法打开摄像头 ")
             return default_resolution_list
 
         for width in resolution_widths:
-            for height in [2448, 1994, 1536, 1080, 1200, 1080, 960, 768, 720, 600, 480]:
+            for height in [
+                    2448, 1994, 1536, 1080, 1200, 1080, 960, 768, 720, 600, 480
+            ]:
                 # # 检查分辨率是否在指定范围内
                 # if width > max_width or height > max_height:
                 #     continue
@@ -253,9 +235,6 @@ def get_camera_supported_resolutions(camera_index=0,
     except Exception as e:
         logger.error(f"获取摄像头支持的分辨率时出现未知错误: {e}")
         return default_resolution_list
-    finally:
-        if 'cap' in locals() and cap.isOpened():
-            cap.release()
 
 
 def preprocess_image(img):
@@ -358,9 +337,8 @@ def find_document_contour(edges, original_img):
         # 使用 cv2.findContours 函数在边缘图像中查找外部轮廓
         # cv2.RETR_EXTERNAL 表示只检测外部轮廓
         # cv2.CHAIN_APPROX_SIMPLE 表示压缩水平、垂直和对角方向的冗余点
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL,
+                                       cv2.CHAIN_APPROX_SIMPLE)
         # 按面积降序排序轮廓，面积大的轮廓排在前面
         contours = sorted(contours, key=cv2.contourArea, reverse=True)
 
@@ -565,8 +543,8 @@ def four_point_transform(image, pts):
         maxHeight = int(max(heightA, heightB))
 
         # 构建目标图像的坐标
-        dst = np.array([[0, 0], [maxWidth - 1, 0], [maxWidth - 1, maxHeight - 1],
-                        [0, maxHeight - 1]],
+        dst = np.array([[0, 0], [maxWidth - 1, 0],
+                        [maxWidth - 1, maxHeight - 1], [0, maxHeight - 1]],
                        dtype="float32")
 
         # 计算透视变换矩阵并应用

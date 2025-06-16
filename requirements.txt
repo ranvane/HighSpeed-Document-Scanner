@@ -2,3 +2,4 @@ wxpython
 opencv-python
 numpy
 PyPDF2
+send2trash
