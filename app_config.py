@@ -71,9 +71,21 @@ DEFAULT_CONFIG = {
     },
     'SCANNER': {
         'dpi': '300',
-        'color_mode': ''
+        'color_mode': 'rgb'
     }
 }
+
+def reset_config_to_default():
+    """
+    重置配置为默认配置并保存到 config.ini
+    """
+    config = configparser.ConfigParser(interpolation=None)
+    config.read_dict(DEFAULT_CONFIG)
+
+    with open(CONFIG_FILE, 'w') as f:
+        config.write(f)
+
+    logger.info("配置文件已重置为默认设置。")
 
 
 def get_config():
@@ -134,14 +146,15 @@ def save_config(config, section=None, option=None, value=None):
 
 
 if __name__ == "__main__":
+    reset_config_to_default()
+
+
     # 初始化配置
     config = get_config()
-    # save_config()
     logger.info(f"当前配置内容: {config._sections}")
 
     # 获取保存路径
     save_location = config.get('PATHS', 'save_location')
-    # 从配置中获取保存文件命名格式
     naming_format = config.get('PATHS', 'save_naming_format')
 
     logger.info(f"save_location: {save_location}")
@@ -152,3 +165,4 @@ if __name__ == "__main__":
     file_name = f"{timestamp}.jpg"
 
     logger.info(f"file_name: {file_name}")
+
