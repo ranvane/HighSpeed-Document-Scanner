@@ -1,10 +1,9 @@
 import os
-import sys
-from loguru import logger
+import platform
 import configparser
 from pathlib import Path
-import platform
-from datetime import datetime  # 新增导入，用于获取当前时间
+from datetime import datetime
+from loguru import logger
 
 
 def get_pictures_folder():
@@ -32,19 +31,16 @@ def get_pictures_folder():
                     for line in f:
                         if line.startswith("XDG_PICTURES_DIR"):
                             path = line.split("=")[1].strip().strip('"')
-                            path = path.replace("$HOME",
-                                                os.path.expanduser("~"))
+                            path = path.replace("$HOME", os.path.expanduser("~"))
                             return path
             except Exception as e:
                 print(f"警告：无法解析 XDG_PICTURES_DIR，使用默认路径。错误: {e}")
         return str(Path.home() / "Pictures")
 
     elif system == "Darwin":
-        # macOS 通常默认图片目录为 ~/Pictures
         return str(Path.home() / "Pictures")
 
     else:
-        # 未知系统，退回到用户目录
         return str(Path.home())
 
 
@@ -61,13 +57,15 @@ CONFIG_FILE = Path(__file__).parent / "config.ini"
 # 默认配置项
 DEFAULT_CONFIG = {
     'PATHS': {
-        'save_location': str(save_folder),  # 添加保存文件夹路径
-        'save_naming_format': '%Y%m%d_%H%M%S',  # 新增：默认按当前时间命名
+        'save_location': str(save_folder),
+        'save_naming_format': '%Y%m%d_%H%M%S',
         'temp_location': 'temp'
     },
     'CAMERA': {
-        'ip_address': 'http://admin:admin@192.168.10.10:8081/',
-        'resolution': '1920x1080'
+        'ip_address': 'http://admin:admin@192.168.10.10:8081/',  # 网络摄像头地址
+        'resolution': '1920x1080',
+        'use_usb_camera': 1,  # 是否使用 USB 摄像头，False 表示默认使用本地摄像头
+        'usb_index': 0  # USB 摄像头索引，默认使用 0 号摄像头
     },
     'SCANNER': {
         'dpi': '300',
@@ -75,94 +73,102 @@ DEFAULT_CONFIG = {
     }
 }
 
+# 参数中文名映射
+PARAM_LABELS = {
+    'save_location': '保存路径',
+    'save_naming_format': '命名格式',
+    'temp_location': '临时目录',
+    'ip_address': '摄像头地址',
+    'resolution': '分辨率',
+    'dpi': '扫描精度',
+    'color_mode': '颜色模式',
+}
+
+
 def reset_config_to_default():
     """
-    重置配置为默认配置并保存到 config.ini
+    重置配置为默认配置并保存到 config.ini，同时写入参数中文名映射
     """
     config = configparser.ConfigParser(interpolation=None)
     config.read_dict(DEFAULT_CONFIG)
 
-    with open(CONFIG_FILE, 'w') as f:
+    config.add_section('LABELS')
+    for key, label in PARAM_LABELS.items():
+        config.set('LABELS', key, label)
+
+    with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
         config.write(f)
 
-    logger.info("配置文件已重置为默认设置。")
+    logger.info("配置文件已重置为默认设置，包含参数中文名映射。")
 
 
 def get_config():
-    """获取配置，如果不存在则创建默认配置
-    返回值:
-        ConfigParser对象: 包含所有配置项的对象
     """
-    # 创建ConfigParser实例
-    # config = configparser.ConfigParser()
-    # 禁用默认字符串插值机制
+    获取配置，如果不存在则创建默认配置
+    返回:
+        configparser.ConfigParser 对象
+    """
     config = configparser.ConfigParser(interpolation=None)
 
-    # 如果配置文件不存在则创建
     if not CONFIG_FILE.exists():
-        # 加载默认配置字典
-        config.read_dict(DEFAULT_CONFIG)
-        # 写入配置文件
-        with open(CONFIG_FILE, 'w') as f:
-            config.write(f)
-        logger.info(f"Created new config file at {CONFIG_FILE}")
+        reset_config_to_default()
     else:
-        # 配置文件存在则直接读取
-        config.read(CONFIG_FILE)
+        config.read(CONFIG_FILE, encoding='utf-8')
 
-    # 确保所有配置项都存在，不存在则设为空
+    # 确保所有配置项都存在，不存在则设为空字符串
     for section, options in DEFAULT_CONFIG.items():
-        # 检查配置节是否存在
         if not config.has_section(section):
             config.add_section(section)
-        # 检查每个配置项是否存在
         for option in options:
             if not config.has_option(section, option):
-                # 设置默认空值
                 config.set(section, option, '')
+
+    # 确保 LABELS 节存在
+    if not config.has_section('LABELS'):
+        config.add_section('LABELS')
+        for key, label in PARAM_LABELS.items():
+            config.set('LABELS', key, label)
 
     return config
 
 
-def save_config(config, section=None, option=None, value=None):
-    """保存配置到文件
-    参数:
-        config: ConfigParser对象
-        section: 要更新的节名(可选)
-        option: 要更新的选项名(可选)
-        value: 要设置的值(可选)
+def get_labels_from_config(config):
     """
-    # 如果提供了section/option/value，则更新配置
+    从配置文件读取参数中文名映射，返回字典
+    """
+    if config.has_section('LABELS'):
+        return dict(config.items('LABELS'))
+    return {}
+
+
+def save_config(config, section=None, option=None, value=None):
+    """
+    保存配置到文件
+    """
     if all([section, option, value is not None]):
         if not config.has_section(section):
             config.add_section(section)
         config.set(section, option, str(value))
         logger.info(f"Updated config: {section}.{option} = {value}")
 
-    # 保存到文件
-    with open(CONFIG_FILE, 'w') as f:
+    with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
         config.write(f)
+
     logger.info(f"Config saved to {CONFIG_FILE}")
 
 
 if __name__ == "__main__":
+    # 重置配置为默认值（含中文映射）
     reset_config_to_default()
 
-
-    # 初始化配置
     config = get_config()
+    labels = get_labels_from_config(config)
+
     logger.info(f"当前配置内容: {config._sections}")
+    logger.info(f"参数中文映射: {labels}")
 
-    # 获取保存路径
-    save_location = config.get('PATHS', 'save_location')
+    # 测试时间命名格式
     naming_format = config.get('PATHS', 'save_naming_format')
-
-    logger.info(f"save_location: {save_location}")
-    logger.info(f"naming_format: {naming_format}")
-
-    # 生成带时间戳的文件名
     timestamp = datetime.now().strftime(naming_format)
     file_name = f"{timestamp}.jpg"
-
-    logger.info(f"file_name: {file_name}")
-
+    logger.info(f"生成的文件名示例: {file_name}")

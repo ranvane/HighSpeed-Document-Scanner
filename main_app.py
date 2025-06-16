@@ -9,6 +9,7 @@ from Document_Scanner_UI import Main_Ui_Frame
 from cammer_utils import get_camera_resolution, get_camera_max_resolution, get_camera, rotate_frame, count_cameras, set_camera_resolution, detect_contour, get_camera_supported_resolutions, draw_boxes_on_image, transform_document
 from loguru import logger
 from app_config import get_config, save_config
+from config_ui import ConfigFrame  # 这是一个自定义的配置窗口类
 # 获取当前脚本所在的目录
 script_dir = os.path.dirname(os.path.abspath(__file__))
 from datetime import datetime  # 导入 datetime 模块
@@ -38,6 +39,42 @@ class Main_Frame(Main_Ui_Frame):
         self.thumb_max_size=(256, 256) # 缩略图最大尺寸
 
         # self.start_camera()
+        print(self.config.getboolean('CAMERA', 'use_usb_camera'))
+        if not self.config.getboolean('CAMERA', 'use_usb_camera'):
+            self.use_web_camera = False
+            
+            logger.debug("启动切换到本地摄像头模式")
+            # 使用 USB 摄像头
+            usb_index = self.config .getint('CAMERA', 'usb_index')
+            # 获取父sizer
+            parent_sizer = self.m_comboBox_select_camera.GetContainingSizer()
+            # 使用本地摄像头时显示控件
+            parent_sizer.Show(self.m_comboBox_select_camera)
+            parent_sizer.Show(self.m_comboBox_select_camera_resolution)
+            parent_sizer.Hide(self.m_web_camera_address)
+            logger.info("已切换到本地摄像头模式")
+            
+
+            self.start_camera()
+            self.m_checkBox_show_camera2_image.Enable(True)# 启用显示摄像头2图像复选框
+            self.m_checkBox_web_camera.SetValue(False)# 禁用网络摄像头复选框
+            
+        else:
+            logger.debug("启动切换到网络摄像头模式")
+            # 使用网络摄像头
+            self.use_web_camera = True
+            
+            # 获取父sizer
+            parent_sizer = self.m_comboBox_select_camera.GetContainingSizer()
+            # 使用网络摄像头时隐藏本地摄像头控件
+            parent_sizer.Hide(self.m_comboBox_select_camera)
+            parent_sizer.Hide(self.m_comboBox_select_camera_resolution)
+            parent_sizer.Show(self.m_web_camera_address)
+            logger.info("已切换到网络摄像头模式")
+            self.m_checkBox_show_camera2_image.Enable(False)# 网络摄像头模式禁用显示摄像头2图像复选框
+            self.m_checkBox_web_camera.SetValue(True)#    启用网络摄像头复选框
+            self.start_camera()
+
 
     def init_web_camera(self):
         """初始化网络摄像头设备
@@ -47,8 +84,9 @@ class Main_Frame(Main_Ui_Frame):
                 3. 设置默认摄像头分辨率
             """
         # 从配置文件中读取网络摄像头地址
-        self.web_camera_ipaddress = self.config.get('CAMERA',
-                                                    'ip_address')  # 读取网络摄像头地址
+        # self.m_web_camera_address.SetValue(self.config.get('CAMERA', 'ip_address'))# 读取网络摄像头地址,并设置到文本框中
+        self.web_camera_ipaddress = self.m_web_camera_address.GetValue()
+        
         logger.info(f"网络摄像头地址: {self.web_camera_ipaddress}")
         # 检查网络摄像头是否可用
         if self.web_camera_ipaddress:
@@ -131,22 +169,31 @@ class Main_Frame(Main_Ui_Frame):
         if parent_sizer:
             # 根据状态控制UI元素
             if self.use_web_camera:
-                # 使用网络摄像头时隐藏本地摄像头控件
-                parent_sizer.Hide(self.m_comboBox_select_camera)
-                parent_sizer.Hide(self.m_comboBox_select_camera_resolution)
-                parent_sizer.Show(self.m_web_camera_address)
-                logger.info("已切换到网络摄像头模式")
-                self.m_checkBox_show_camera2_image.Enable(False)# 网络摄像头模式禁用显示摄像头2图像复选框
-                self.start_camera()
+                try:
+                    # 使用网络摄像头时隐藏本地摄像头控件
+                    parent_sizer.Hide(self.m_comboBox_select_camera)
+                    parent_sizer.Hide(self.m_comboBox_select_camera_resolution)
+                    parent_sizer.Show(self.m_web_camera_address)
+                    logger.info("已切换到网络摄像头模式")
+                    self.m_checkBox_show_camera2_image.Enable(False)# 网络摄像头模式禁用显示摄像头2图像复选框
+                    self.start_camera()
+                except Exception as e:
+                    logger.error("切换到网络摄像头模式发生错误:{e}")
+
                 
             else:
-                # 使用本地摄像头时显示控件
-                parent_sizer.Show(self.m_comboBox_select_camera)
-                parent_sizer.Show(self.m_comboBox_select_camera_resolution)
-                parent_sizer.Hide(self.m_web_camera_address)
-                logger.info("已切换到本地摄像头模式")
+                try:
+                    self.start_camera()
+                    # 使用本地摄像头时显示控件
+                    parent_sizer.Show(self.m_comboBox_select_camera)
+                    parent_sizer.Show(self.m_comboBox_select_camera_resolution)
+                    parent_sizer.Hide(self.m_web_camera_address)
+                    logger.info("已切换到本地摄像头模式")
+                except Exception as e:
+                    logger.error("切换到本地摄像头模式发生错误:{e}")
 
-                self.start_camera()
+
+                
                 self.m_checkBox_show_camera2_image.Enable(True)# 启用显示摄像头2图像复选框
 
             # 强制重新布局
@@ -181,17 +228,18 @@ class Main_Frame(Main_Ui_Frame):
                 logger.info("摄像头释放成功")
         except Exception as e:
             logger.info("摄像头释放错误:{e}")
+            return None
 
         if self.use_web_camera:
             # 初始化网络摄像头
-
+            logger.info(f"初始化网络摄像头,网络摄像头地址: {self.web_camera_ipaddress}")
             self.web_camera_ipaddress = self.config.get(
                 'CAMERA', 'ip_address')  # 从配置文件中读取网络摄像头地址
             if len(self.web_camera_ipaddress) < 1:
                 logger.info(f"网络摄像头地址不正确")
             else:
                 logger.info(f"网络摄像头地址: {self.web_camera_ipaddress}")
-                self.m_web_camera_address.SetValue(self.web_camera_ipaddress)
+                self.m_web_camera_address.SetValue(self.web_camera_ipaddress)# 读取网络摄像头地址,并设置到文本框中
                 self.init_web_camera()
                 self.camera_resolution = get_camera_resolution(self.capture)
 
@@ -449,6 +497,13 @@ class Main_Frame(Main_Ui_Frame):
             self.capture_running = False
             self.capture.release()  # 释放摄像头资源
             self.capture_thread.join()  # 等待线程结束
+            
+            # 检查是否使用网络摄像头且摄像头可读取
+            if self.use_web_camera and self.web_camera_ipaddress:
+                # 保存网络摄像头 IP 地址到配置文件
+                self.config.set('CAMERA', 'ip_address', self.web_camera_ipaddress)
+                save_config(self.config)
+                logger.info(f"已保存网络摄像头 IP 地址: {self.web_camera_ipaddress}")
         logger.debug("摄像头线程已停止")
 
         # 销毁主窗口
@@ -458,7 +513,12 @@ class Main_Frame(Main_Ui_Frame):
         # 使用 wx.CallAfter 确保在主事件循环中退出应用
         logger.debug("准备退出应用程序")
         wx.CallAfter(wx.GetApp().ExitMainLoop)
-
+        
+    def on_setting(self, event):
+        # 打开设置窗口
+        config_frame = ConfigFrame(parent=self)
+        config_frame.Show()
+        event.Skip()
 
 if __name__ == '__main__':
     app = wx.App()
