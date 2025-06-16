@@ -8,7 +8,7 @@ import cv2
 from Document_Scanner_UI import Main_Ui_Frame
 from cammer_utils import get_camera_max_resolution, rotate_frame,count_cameras, set_camera_resolution, detect_contour, get_camera_supported_resolutions,draw_boxes_on_image,transform_document
 from loguru import logger
-
+from app_config import get_config,save_config
 # 获取当前脚本所在的目录
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -18,6 +18,8 @@ class Main_Frame(Main_Ui_Frame):
     def __init__(self):
         super().__init__(parent=None)
         self.camera_index = -1
+        self.use_web_camera =False
+        self.web_camera_ipaddress = ''
         self.camera_resolution = None
         self.fps = 30
         self.frame = None
@@ -26,46 +28,112 @@ class Main_Frame(Main_Ui_Frame):
         self.enable_rectify_surface =False # 添加一个标志位来控制是否启用曲面展平
         self.m_checkBox_rectify_surface.SetValue(self.enable_rectify_surface)
         self.frame_rotation = 0  # 初始旋转角度为0
+        self.config = get_config()# 初始化配置
 
 
+
+        #
+        #     self.start_camera()
+
+    def init_web_camera(self):
+            """初始化网络摄像头设备
+            功能：
+                1. 从配置文件中读取网络摄像头地址
+                2. 检测网络摄像头是否可用
+                3. 设置默认摄像头分辨率
+            """
+            # 从配置文件中读取网络摄像头地址
+            self.web_camera_ipaddress = self.config.get('CAMERA', 'ip_address')  # 读取网络摄像头地址
+            logger.info(f"网络摄像头地址: {self.web_camera_ipaddress}")
+
+    def init_local_camera(self):
+        """初始化本地摄像头设备
+        功能：
+            1. 检测可用摄像头数量
+            2. 初始化摄像头选择下拉框
+            3. 设置默认摄像头分辨率
+        """
+        # 获取可用摄像头数量
         camera_nums = count_cameras()
+
+        # 如果有可用摄像头
         if camera_nums > 0:
-            # 根据指定摄像头的分辨率列表，返回一个分辨率列表：从最大分辨率开始，直至720p。
+            # 获取第一个摄像头支持的分辨率列表(从最大到720p)
             self.resolution_list = get_camera_supported_resolutions(0)
-            # 初始化摄像头选择下拉框
-            self.m_comboBox_select_camera.SetItems(
-                [str(i) for i in range(camera_nums + 1)])
+
+            # 创建摄像头选项列表(0到摄像头数量)
+            camera_items = [str(i) for i in range(camera_nums + 1)]
+
+            # 设置摄像头选择下拉框选项
+            self.m_comboBox_select_camera.SetItems(camera_items)
+
+            # 默认选择第一个摄像头
             self.m_comboBox_select_camera.SetSelection(0)
 
-            self.camera_index = int(
-                self.m_comboBox_select_camera.GetValue())  #选择的摄像头索引
+            # 获取当前选择的摄像头索引
+            self.camera_index = int(self.m_comboBox_select_camera.GetValue())
+
+            # 获取该摄像头支持的所有分辨率
             self.camera_resolution_list = get_camera_supported_resolutions(
-                self.camera_index)  # 获取摄像头支持的分辨率列表
+                self.camera_index)
             logger.info(
                 f"摄像头-- {self.camera_index} 支持的分辨率列表: {self.camera_resolution_list}"
             )
-            # 初始化摄像头分辨率选择下拉框
+
+            # 初始化分辨率选择下拉框
             self.m_comboBox_select_camera_resolution.SetItems([
                 f"{resolution[0]}x{resolution[1]}"
                 for resolution in self.resolution_list
             ])
 
-            # 初始化摄像头分辨率选择下拉框默认值
-            # 筛选出最接近1920*1020的项的索引
+            # 设置默认分辨率(优先选择1920x1440)
             preferred_res = (1920, 1440)
             if preferred_res in self.camera_resolution_list:
                 index = self.camera_resolution_list.index(preferred_res)
             else:
-                # 选择最接近目标分辨率的分辨率
+                # 如果没有1920x1440，选择最接近的分辨率
                 index = min(
                     range(len(self.camera_resolution_list)),
                     key=lambda i: abs(self.camera_resolution_list[i][0] -
                                       preferred_res[0]) +
-                    abs(self.camera_resolution_list[i][1] - preferred_res[1]))
+                                  abs(self.camera_resolution_list[i][1] - preferred_res[1]))
 
+            # 设置下拉框默认选择项
             self.m_comboBox_select_camera_resolution.SetSelection(index)
 
-            self.start_camera()
+    def on_use_web_camera(self, event):
+        """切换使用网络摄像头状态"""
+        # 切换状态
+        self.use_web_camera = not self.use_web_camera
+
+        # 获取父sizer
+        parent_sizer = self.m_comboBox_select_camera.GetContainingSizer()
+        logger.info("切换摄像头模式")
+        if parent_sizer:
+            # 根据状态控制UI元素
+            if self.use_web_camera:
+                # 使用网络摄像头时隐藏本地摄像头控件
+                parent_sizer.Hide(self.m_comboBox_select_camera)
+                parent_sizer.Hide(self.m_comboBox_select_camera_resolution)
+                parent_sizer.Show(self.m_web_camera_address)
+                logger.info("已切换到网络摄像头模式")
+            else:
+                # 使用本地摄像头时显示控件
+                parent_sizer.Show(self.m_comboBox_select_camera)
+                parent_sizer.Show(self.m_comboBox_select_camera_resolution)
+                parent_sizer.Hide(self.m_web_camera_address)
+                logger.info("已切换到本地摄像头模式")
+
+            # 强制重新布局
+            parent_sizer.Layout()
+            self.GetSizer().Layout()
+            self.Refresh()
+            self.Update()
+
+
+            # 重新布局窗口
+            self.Layout()
+            self.Refresh()
 
     def start_camera(self):
         """

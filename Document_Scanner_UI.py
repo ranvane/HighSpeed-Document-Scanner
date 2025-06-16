@@ -35,38 +35,46 @@ class Main_Ui_Frame ( wx.Frame ):
 
         top_left_bSizer.Add( self.m_bitmap_camera, 10, wx.ALL, 5 )
 
-        bSizer8 = wx.BoxSizer( wx.HORIZONTAL )
+        m_item_bSizer = wx.BoxSizer( wx.HORIZONTAL )
 
         m_comboBox_select_cameraChoices = []
         self.m_comboBox_select_camera = wx.ComboBox( self, wx.ID_ANY, _(u"1"), wx.DefaultPosition, wx.DefaultSize, m_comboBox_select_cameraChoices, 0 )
         self.m_comboBox_select_camera.SetSelection( 0 )
-        bSizer8.Add( self.m_comboBox_select_camera, 0, wx.ALL, 5 )
+        m_item_bSizer.Add( self.m_comboBox_select_camera, 0, wx.ALL, 5 )
 
         m_comboBox_select_camera_resolutionChoices = []
         self.m_comboBox_select_camera_resolution = wx.ComboBox( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, m_comboBox_select_camera_resolutionChoices, 0 )
-        bSizer8.Add( self.m_comboBox_select_camera_resolution, 0, wx.ALL, 5 )
+        m_item_bSizer.Add( self.m_comboBox_select_camera_resolution, 0, wx.ALL, 5 )
+
+        self.m_web_camera_address = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 300,-1 ), 0 )
+        self.m_web_camera_address.Hide()
+
+        m_item_bSizer.Add( self.m_web_camera_address, 0, wx.ALL, 5 )
+
+        self.m_checkBox_web_camera = wx.CheckBox( self, wx.ID_ANY, _(u"使用网络摄像头"), wx.DefaultPosition, wx.DefaultSize, 0 )
+        m_item_bSizer.Add( self.m_checkBox_web_camera, 0, wx.ALL|wx.EXPAND, 5 )
 
 
-        bSizer8.Add( ( 0, 0), 1, wx.EXPAND, 5 )
+        m_item_bSizer.Add( ( 0, 0), 1, wx.EXPAND, 5 )
 
         self.m_checkBox_show_camera2_image = wx.CheckBox( self, wx.ID_ANY, _(u"显示副头图像"), wx.DefaultPosition, wx.DefaultSize, 0 )
-        bSizer8.Add( self.m_checkBox_show_camera2_image, 0, wx.ALL, 5 )
+        m_item_bSizer.Add( self.m_checkBox_show_camera2_image, 0, wx.ALL|wx.EXPAND, 5 )
 
         self.m_checkBox_detect_squares = wx.CheckBox( self, wx.ID_ANY, _(u"识别"), wx.DefaultPosition, wx.DefaultSize, 0 )
-        bSizer8.Add( self.m_checkBox_detect_squares, 0, wx.ALL, 5 )
+        m_item_bSizer.Add( self.m_checkBox_detect_squares, 0, wx.ALL|wx.EXPAND, 5 )
 
         self.m_checkBox_rectify_surface = wx.CheckBox( self, wx.ID_ANY, _(u"曲面展平"), wx.DefaultPosition, wx.DefaultSize, 0 )
         self.m_checkBox_rectify_surface.SetValue(True)
-        bSizer8.Add( self.m_checkBox_rectify_surface, 0, wx.ALL, 5 )
+        m_item_bSizer.Add( self.m_checkBox_rectify_surface, 0, wx.ALL|wx.EXPAND, 5 )
 
         self.m_button_left_rotation = wx.Button( self, wx.ID_ANY, _(u"左旋90"), wx.DefaultPosition, wx.DefaultSize, 0 )
-        bSizer8.Add( self.m_button_left_rotation, 0, wx.ALL, 5 )
+        m_item_bSizer.Add( self.m_button_left_rotation, 0, wx.ALL, 5 )
 
         self.m_button_right_rotation = wx.Button( self, wx.ID_ANY, _(u"右旋90"), wx.DefaultPosition, wx.DefaultSize, 0 )
-        bSizer8.Add( self.m_button_right_rotation, 0, wx.ALL, 5 )
+        m_item_bSizer.Add( self.m_button_right_rotation, 0, wx.ALL, 5 )
 
 
-        top_left_bSizer.Add( bSizer8, 0, wx.EXPAND, 5 )
+        top_left_bSizer.Add( m_item_bSizer, 0, wx.EXPAND, 5 )
 
 
         top_Sizer.Add( top_left_bSizer, 5, wx.EXPAND, 5 )
@@ -133,6 +141,7 @@ class Main_Ui_Frame ( wx.Frame ):
 
         # Connect Events
         self.Bind( wx.EVT_CLOSE, self.on_close )
+        self.m_checkBox_web_camera.Bind( wx.EVT_CHECKBOX, self.on_use_web_camera )
         self.m_checkBox_detect_squares.Bind( wx.EVT_CHECKBOX, self.on_detect_squares )
         self.m_checkBox_rectify_surface.Bind( wx.EVT_CHECKBOX, self.on_rectify_surface )
         self.m_button_left_rotation.Bind( wx.EVT_BUTTON, self.on_left_rotation )
@@ -151,6 +160,9 @@ class Main_Ui_Frame ( wx.Frame ):
 
     # Virtual event handlers, override them in your derived class
     def on_close( self, event ):
+        event.Skip()
+
+    def on_use_web_camera( self, event ):
         event.Skip()
 
     def on_detect_squares( self, event ):
