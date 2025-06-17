@@ -44,7 +44,9 @@ class Main_Frame(Main_Ui_Frame):
         # 当前捕获的帧，初始为 None
         self.current_captured_frame = None
         # 摄像头捕获对象，初始为 None
-        self.camera_capture_object = None
+        self.camera_capture = None
+        # 摄像头捕获线程，初始为 None
+        self.capture_thread = None
 
         # 设置默认分辨率(优先选择 1920x1440)
         self.PREFERRED_RESOLUTION = (1920, 1440)
@@ -96,6 +98,8 @@ class Main_Frame(Main_Ui_Frame):
                 parent_sizer.Hide(self.m_comboBox_select_camera)
                 parent_sizer.Hide(self.m_comboBox_select_camera_resolution)
                 parent_sizer.Show(self.m_web_camera_address)
+                if len(self.m_web_camera_address.GetValue())<1:
+                    self.m_web_camera_address.SetValue(self.config.get('CAMERA', 'ip_address'))
                 logger.info("已切换到网络摄像头模式")
                 self.m_checkBox_show_camera2_image.Enable(False)
                 self.m_checkBox_web_camera.SetValue(True)
@@ -140,7 +144,7 @@ class Main_Frame(Main_Ui_Frame):
         功能：
             1. 从 UI 输入框获取网络摄像头地址。
             2. 尝试连接网络摄像头并检测其是否可用。
-            3. 若连接成功，将摄像头捕获对象赋值给 self.camera_capture_object。
+            3. 若连接成功，将摄像头捕获对象赋值给 self.camera_capture。
 
         Returns:
             None
@@ -155,7 +159,7 @@ class Main_Frame(Main_Ui_Frame):
                 # 尝试连接网络摄像头
                 capture = cv2.VideoCapture(self.webcam_url)
                 if capture.isOpened():
-                    self.capture = capture
+                    self.camera_capture = capture
                 else:
                     logger.error(f"无法连接网络摄像头: {self.webcam_url}")
             except Exception as e:
@@ -185,16 +189,16 @@ class Main_Frame(Main_Ui_Frame):
             # 默认选择第一个摄像头
             self.m_comboBox_select_camera.SetSelection(0)
 
-            self.capture = get_camera(
+            self.camera_capture = get_camera(
                 int(self.m_comboBox_select_camera.GetValue()))
-            if self.capture:
+            if self.camera_capture:
                 # 获取 m_comboBox_select_camera 摄像头支持的分辨率列表(从最大到 720p)
                 self.resolution_list = get_camera_supported_resolutions(
-                    self.capture)
+                    self.camera_capture)
 
                 # 获取该摄像头支持的所有分辨率
                 self.camera_supported_resolutions = get_camera_supported_resolutions(
-                    self.capture)
+                    self.camera_capture)
                 logger.info(f"摄像头支持的分辨率列表: {self.camera_supported_resolutions}")
 
                 # 初始化分辨率选择下拉框
@@ -217,59 +221,6 @@ class Main_Frame(Main_Ui_Frame):
                 # 设置下拉框默认选择项
                 self.m_comboBox_select_camera_resolution.SetSelection(index)
 
-    def on_use_web_camera(self, event):
-        """
-        切换使用网络摄像头状态。
-        根据复选框状态切换使用本地摄像头或网络摄像头，并更新相应的 UI 控件。
-
-        Args:
-            event: 触发事件的事件对象
-        """
-        # 切换状态
-        self.use_webcam = not self.use_webcam
-
-        # 获取父 sizer
-        parent_sizer = self.m_comboBox_select_camera.GetContainingSizer()
-        logger.info("切换摄像头模式")
-        if parent_sizer:
-            # 根据状态控制 UI 元素
-            if self.use_webcam:
-                try:
-                    # 使用网络摄像头时隐藏本地摄像头控件
-                    parent_sizer.Hide(self.m_comboBox_select_camera)
-                    parent_sizer.Hide(self.m_comboBox_select_camera_resolution)
-                    parent_sizer.Show(self.m_web_camera_address)
-                    logger.info("已切换到网络摄像头模式")
-                    # 网络摄像头模式禁用显示摄像头 2 图像复选框
-                    self.m_checkBox_show_camera2_image.Enable(False)
-                    # 启动摄像头
-                    self.start_camera()
-                except Exception as e:
-                    logger.error(f"切换到网络摄像头模式发生错误: {e}")
-            else:
-                try:
-                    # 启动摄像头
-                    self.start_camera()
-                    # 使用本地摄像头时显示控件
-                    parent_sizer.Show(self.m_comboBox_select_camera)
-                    parent_sizer.Show(self.m_comboBox_select_camera_resolution)
-                    parent_sizer.Hide(self.m_web_camera_address)
-                    logger.info("已切换到本地摄像头模式")
-                except Exception as e:
-                    logger.error(f"切换到本地摄像头模式发生错误: {e}")
-                # 启用显示摄像头 2 图像复选框
-                self.m_checkBox_show_camera2_image.Enable(True)
-
-            # 强制重新布局
-            parent_sizer.Layout()
-            self.GetSizer().Layout()
-            self.Refresh()
-            self.Update()
-
-            # 重新布局窗口
-            self.Layout()
-            self.Refresh()
-
     def start_camera(self):
         """
         初始化摄像头并启动摄像头线程。
@@ -280,10 +231,10 @@ class Main_Frame(Main_Ui_Frame):
         """
         frame_interval_ms = 1000 // self.fps
         try:
-            if hasattr(self, "camera_capture_object") and self.camera_capture_object is not None:
+            if hasattr(self, "camera_capture") and self.camera_capture is not None:
                 self.is_camera_capture_running = False
                 try:
-                    self.camera_capture_object.release()
+                    self.camera_capture.release()
                     if hasattr(self, "capture_thread") and self.capture_thread.is_alive():
                         self.capture_thread.join(timeout=1)
                 except Exception as e:
@@ -302,18 +253,18 @@ class Main_Frame(Main_Ui_Frame):
                 return
             logger.info(f"网络摄像头地址: {self.webcam_ip_address}")
             self.init_web_camera()
-            if self.camera_capture_object:
-                self.camera_resolution = get_camera_resolution(self.camera_capture_object)
+            if self.camera_capture:
+                self.camera_resolution = get_camera_resolution(self.camera_capture)
             else:
                 wx.CallAfter(wx.MessageBox, "无法连接网络摄像头", "错误", wx.OK | wx.ICON_ERROR)
                 return
         else:
             self.init_local_camera()
-            if not self.camera_capture_object:
+            if not self.camera_capture:
                 wx.CallAfter(wx.MessageBox, "无法初始化本地摄像头", "错误", wx.OK | wx.ICON_ERROR)
                 return
 
-        if self.camera_capture_object:
+        if self.camera_capture:
             try:
                 self.m_bitmap_camera.SetSize(self.camera_resolution)
                 self.is_camera_capture_running = True
@@ -339,9 +290,9 @@ class Main_Frame(Main_Ui_Frame):
         Args:
             frame_interval_ms (int): 帧更新的时间间隔（毫秒）。
         """
-        while self.capture.isOpened() and self.is_camera_capture_running:
+        while self.camera_capture.isOpened() and self.is_camera_capture_running:
             # 从摄像头读取一帧图像
-            ret, frame = self.capture.read()
+            ret, frame = self.camera_capture.read()
 
             if ret:
                 # 根据 self.image_rotation 旋转图像
@@ -545,11 +496,11 @@ class Main_Frame(Main_Ui_Frame):
         logger.debug("正在停止摄像头线程")
 
         if hasattr(self, "capture"
-                   ) and self.capture is not None and self.capture.isOpened():
+                   ) and self.camera_capture is not None and self.camera_capture.isOpened():
             # 停止摄像头捕获线程
             self.is_camera_capture_running = False
             # 释放摄像头资源
-            self.capture.release()
+            self.camera_capture.release()
             # 等待线程结束
             self.capture_thread.join()
 
