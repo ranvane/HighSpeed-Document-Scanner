@@ -1,5 +1,5 @@
 wxpython
 opencv-python
 numpy
-PyPDF2
+Pillow
 send2trash

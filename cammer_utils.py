@@ -601,7 +601,7 @@ def transform_document(frame):
             warped = four_point_transform(frame, pts)
         else:
             # 若未找到合适轮廓，返回原始图像
-            logger.warning("未找到合适的文档轮廓，返回原始图像")
+            # logger.warning("未找到合适的文档轮廓，返回原始图像")
             warped = frame
 
         return warped

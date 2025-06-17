@@ -12,6 +12,7 @@ from app_config import get_config, save_config
 # 从自定义配置界面模块中导入配置窗口类
 from config_ui import ConfigFrame  # 这是一个自定义的配置窗口类
 from datetime import datetime
+from utils import save_image,save_pdf
 
 # 获取当前脚本所在的目录
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -445,21 +446,16 @@ class Main_Frame(Main_Ui_Frame):
             # 构建保存文件的完整路径
             path = os.path.join(save_location, file_name)
             # 保存图像
-            try:
-                # 将 BGR 格式的 OpenCV 图像转换为 RGB 格式
-                rgb_frame = cv2.cvtColor(self.current_captured_frame, cv2.COLOR_BGR2RGB)
-                # 创建 wx.Image 对象
-                image = wx.Image(rgb_frame.shape[1], rgb_frame.shape[0])
-                image.SetData(rgb_frame.tobytes())
-                # 保存图像到指定路径
-                logger.info(f"保存图像: {path}")
-                image.SaveFile(path, wx.BITMAP_TYPE_JPEG)
-            except Exception as e:
-                logger.error(f"保存图像失败: {e}")
+            if self.is_surface_rectification_enabled:
+                # 对图像进行曲面展平处理
+                logger.debug("保存曲面展平处理后的图像")
+                frame = transform_document(self.current_captured_frame)
+            else:
+                # 原始图像
+                frame = self.current_captured_frame
+            save_image(frame, path)
 
             self.m_thumbnailgallery.add_image(path)
-            # self.GetSizer().Layout()  # 重新布局主窗口
-            # self.Refresh()
         else:
             logger.error("没有捕获到图像")
             return
@@ -472,14 +468,54 @@ class Main_Frame(Main_Ui_Frame):
             event: 触发事件的事件对象
         """
         if self.current_captured_frame is not None:
+            # 从配置中获取保存路径
+            save_location = self.config.get('PATHS', 'save_location')
+            # 从配置中获取保存文件命名格式
+            naming_format = self.config.get('PATHS', 'save_naming_format')
+            # 生成带时间戳的文件名
+            timestamp = datetime.now().strftime(naming_format)
+            file_name = f"{timestamp}.jpg"
+            # 确保保存路径存在
+            os.makedirs(save_location, exist_ok=True)
+            # 构建保存文件的完整路径
+            path = os.path.join(save_location, file_name)
+            # 保存图像
             # 对图像进行曲面展平处理
-            _frame = transform_document(self.current_captured_frame)
-            # 保存曲面展平后的图像
-            cv2.imwrite("temp_surface.jpg", _frame)
+            logger.debug("保存曲面展平处理后的图像")
+            frame = transform_document(self.current_captured_frame)
+
+            save_image(frame, path)
+
         else:
             logger.error("没有捕获到图像")
             return
+    def on_take_pdf_doc(self, event):
+        """
+        此方法负责将当前图像曲面找平后保存为pdf文件。
+        Args:
+            event: 触发事件的事件对象
+        """
+        if self.current_captured_frame is not None:
+            # 从配置中获取保存路径
+            save_location = self.config.get('PATHS', 'save_location')
+            # 从配置中获取保存文件命名格式
+            naming_format = self.config.get('PATHS', 'save_naming_format')
+            # 生成带时间戳的文件名
+            timestamp = datetime.now().strftime(naming_format)
+            file_name = f"{timestamp}.pdf"
+            # 确保保存路径存在
+            os.makedirs(save_location, exist_ok=True)
+            # 构建保存文件的完整路径
+            path = os.path.join(save_location, file_name)
 
+            # 对图像进行曲面展平处理
+            logger.debug("保存曲面展平处理后的图像为 PDF 文件")
+            frame = transform_document(self.current_captured_frame)
+            save_pdf([frame], path)
+
+        else:
+            logger.error("没有捕获到图像")
+            return
     def on_right_rotation(self, event):
         """
         处理左旋转的事件。
