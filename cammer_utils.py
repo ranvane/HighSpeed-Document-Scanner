@@ -396,14 +396,17 @@ def draw_boxes_on_image(frame, boxes, color=(0, 255, 0), thickness=5):
         # 检查输入的 boxes 是否为列表
         if not isinstance(boxes, list):
             logger.error("输入的 boxes 必须是列表类型")
+            return frame
 
         # 检查 color 是否为有效的元组
         if not isinstance(color, tuple) or len(color) != 3:
             logger.error("color 必须是长度为 3 的元组")
+            return frame
 
         # 检查 thickness 是否为正整数
         if not isinstance(thickness, int) or thickness <= 0:
             logger.error("thickness 必须是正整数")
+            return frame
 
         img_with_boxes = frame.copy()
         for box in boxes:
@@ -412,6 +415,7 @@ def draw_boxes_on_image(frame, boxes, color=(0, 255, 0), thickness=5):
                 box = np.array(box, dtype=np.int32)
             if box.ndim != 2 or box.shape[1] != 2:
                 logger.error("每个方框必须是二维数组，且第二维长度为 2")
+                return frame
             cv2.drawContours(img_with_boxes, [box], -1, color, thickness)
 
         return img_with_boxes

@@ -77,7 +77,15 @@ class Main_Frame(Main_Ui_Frame):
             self.switch_to_local_camera()
         else:
             self.switch_to_web_camera()
-
+    def clear_camera_bitmap(self):
+        """
+        清空 m_bitmap_camera 显示的图像
+        """
+        # 创建一个空白的 wx.Bitmap 对象
+        blank_bitmap = wx.Bitmap(1, 1)
+        self.bitmap=blank_bitmap
+        # self.m_bitmap_camera.SetBitmap(blank_bitmap)
+        # self.m_bitmap_camera.Refresh()
     def _update_camera_ui(self, show_local):
         """
         更新摄像头相关的 UI 显示状态
@@ -104,27 +112,31 @@ class Main_Frame(Main_Ui_Frame):
                 self.m_checkBox_show_camera2_image.Enable(False)
                 self.m_checkBox_web_camera.SetValue(True)
             parent_sizer.Layout()
-            self.GetSizer().Layout()
+            # self.GetSizer().Layout()
             # self.Refresh()
-            self.Update()
-            self.Layout()
-            self.Refresh()
+            # self.Update()
+            # self.Layout()
+            # self.Refresh()
 
     def switch_to_local_camera(self):
         """切换到本地摄像头模式"""
         self.use_webcam = False
+        # 清空 m_bitmap_camera 图像
+        self.clear_camera_bitmap()
         logger.debug("启动切换到本地摄像头模式")
         self._update_camera_ui(show_local=True)
-        self.start_camera()
+        wx.CallAfter(self.start_camera)
 
     def switch_to_web_camera(self):
         """切换到网络摄像头模式"""
         self.use_webcam = True
+        # 清空 m_bitmap_camera 图像
+        self.clear_camera_bitmap()
         logger.debug("启动切换到网络摄像头模式")
         self._update_camera_ui(show_local=False)
-        self.start_camera()
+        wx.CallAfter(self.start_camera)
 
-    def on_use_web_camera(self, event):
+    def on_use_webcam(self, event):
         """
         切换使用网络摄像头状态。
         根据复选框状态切换使用本地摄像头或网络摄像头，并更新相应的 UI 控件。
@@ -134,8 +146,11 @@ class Main_Frame(Main_Ui_Frame):
         """
         self.use_webcam = not self.use_webcam
         logger.info("切换摄像头模式")
-        self._update_camera_ui(show_local=not self.use_webcam)
-        self.start_camera()
+
+        if self.use_webcam:
+            self.switch_to_web_camera()
+        else:
+            self.switch_to_local_camera()
 
     def init_web_camera(self):
         """
@@ -220,6 +235,9 @@ class Main_Frame(Main_Ui_Frame):
 
                 # 设置下拉框默认选择项
                 self.m_comboBox_select_camera_resolution.SetSelection(index)
+        else:
+            self.camera_capture=None
+            logger.error("未找到可用摄像头")
 
     def start_camera(self):
         """
@@ -232,17 +250,19 @@ class Main_Frame(Main_Ui_Frame):
         frame_interval_ms = 1000 // self.fps
         try:
             if hasattr(self, "camera_capture") and self.camera_capture is not None:
+                logger.debug("新连接前释放摄像头资源")
                 self.is_camera_capture_running = False
                 try:
                     self.camera_capture.release()
                     if hasattr(self, "capture_thread") and self.capture_thread.is_alive():
+                        logger.debug("新连接前释放摄像头摄像头线程")
                         self.capture_thread.join(timeout=1)
                 except Exception as e:
-                    logger.warning(f"释放摄像头资源时出错: {e}")
-                    wx.CallAfter(wx.MessageBox, f"释放摄像头资源时出错: {e}", "警告", wx.OK | wx.ICON_WARNING)
+                    logger.warning(f"新连接前释放摄像头摄像头线程: {e}")
+                    wx.CallAfter(wx.MessageBox, f"新连接前释放摄像头摄像头线程: {e}", "警告", wx.OK | wx.ICON_WARNING)
         except Exception as e:
-            logger.error(f"摄像头释放错误: {e}")
-            wx.CallAfter(wx.MessageBox, f"摄像头释放错误: {e}", "错误", wx.OK | wx.ICON_ERROR)
+            logger.error(f"新连接前释放摄像头资源: {e}")
+            wx.CallAfter(wx.MessageBox, f"新连接前释放摄像头资源: {e}", "错误", wx.OK | wx.ICON_ERROR)
             return
 
         if self.use_webcam:
@@ -266,6 +286,13 @@ class Main_Frame(Main_Ui_Frame):
 
         if self.camera_capture:
             try:
+                # 获取 m_bitmap_camera 所在 sizer 的尺寸
+                sizer = self.m_bitmap_camera.GetContainingSizer()
+                if sizer:
+                    sizer_size = sizer.GetSize()
+                    self.m_bitmap_camera.SetSize(sizer_size)
+                    self.camera_resolution = sizer_size  # 以 sizer 尺寸作为显示分辨率
+
                 self.m_bitmap_camera.SetSize(self.camera_resolution)
                 self.is_camera_capture_running = True
                 self.capture_thread = threading.Thread(

@@ -133,7 +133,7 @@ class Main_Ui_Frame ( wx.Frame ):
 
         # Connect Events
         self.Bind( wx.EVT_CLOSE, self.on_close )
-        self.m_checkBox_web_camera.Bind( wx.EVT_CHECKBOX, self.on_use_web_camera )
+        self.m_checkBox_web_camera.Bind( wx.EVT_CHECKBOX, self.on_use_webcam )
         self.m_checkBox_detect_squares.Bind( wx.EVT_CHECKBOX, self.on_detect_squares )
         self.m_checkBox_rectify_surface.Bind( wx.EVT_CHECKBOX, self.on_rectify_surface )
         self.m_button_left_rotation.Bind( wx.EVT_BUTTON, self.on_left_rotation )
@@ -154,7 +154,7 @@ class Main_Ui_Frame ( wx.Frame ):
     def on_close( self, event ):
         event.Skip()
 
-    def on_use_web_camera( self, event ):
+    def on_use_webcam( self, event ):
         event.Skip()
 
     def on_detect_squares( self, event ):
