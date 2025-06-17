@@ -118,6 +118,8 @@ class ThumbnailGallery(wx.Panel):
         self.grid.Add(thumb, 0, wx.ALL | wx.EXPAND, 4)
         wx.CallAfter(self.scroll.FitInside)
         wx.CallAfter(self.scroll.Layout)
+    def get_images(self):
+        return [thumb.image_path for thumb in self.thumbnails]
 
     def toggle_selection(self, thumb, multi=False):
         if not multi:

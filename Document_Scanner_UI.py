@@ -98,10 +98,15 @@ class Main_Ui_Frame ( wx.Frame ):
 
         bottom_Sizer.Add( self.m_button_take_photo, 0, wx.ALL, 5 )
 
-        self.m_button_take_doc = wx.Button( self, wx.ID_ANY, _(u"文档"), wx.DefaultPosition, wx.Size( 75,75 ), 0 )
+        self.m_button_take_doc = wx.Button( self, wx.ID_ANY, _(u"矫正为文档"), wx.DefaultPosition, wx.Size( 75,75 ), 0 )
         self.m_button_take_doc.SetToolTip( _(u"保存提取、矫正后的文档图像。") )
 
         bottom_Sizer.Add( self.m_button_take_doc, 0, wx.ALL, 5 )
+
+        self.m_button_take_card = wx.Button( self, wx.ID_ANY, _(u"提取证件"), wx.DefaultPosition, wx.Size( 75,75 ), 0 )
+        self.m_button_take_card.SetToolTip( _(u"保存提取、矫正后的文档图像。") )
+
+        bottom_Sizer.Add( self.m_button_take_card, 0, wx.ALL, 5 )
 
         self.m_button_merge_photos = wx.Button( self, wx.ID_ANY, _(u"合并图片"), wx.DefaultPosition, wx.Size( 75,75 ), 0 )
         bottom_Sizer.Add( self.m_button_merge_photos, 0, wx.ALL, 5 )
@@ -140,6 +145,7 @@ class Main_Ui_Frame ( wx.Frame ):
         self.m_button_right_rotation.Bind( wx.EVT_BUTTON, self.on_right_rotation )
         self.m_button_take_photo.Bind( wx.EVT_BUTTON, self.on_take_photo )
         self.m_button_take_doc.Bind( wx.EVT_BUTTON, self.on_take_document )
+        self.m_button_take_card.Bind( wx.EVT_BUTTON, self.on_take_card )
         self.m_button_merge_photos.Bind( wx.EVT_BUTTON, self.on_merge_photos )
         self.m_button_scan_qr_code.Bind( wx.EVT_BUTTON, self.on_scan_qr_code )
         self.m_button_take_pdf_doc.Bind( wx.EVT_BUTTON, self.on_take_pdf_doc )
@@ -173,6 +179,9 @@ class Main_Ui_Frame ( wx.Frame ):
         event.Skip()
 
     def on_take_document( self, event ):
+        event.Skip()
+
+    def on_take_card( self, event ):
         event.Skip()
 
     def on_merge_photos( self, event ):
