@@ -9,7 +9,7 @@ def rotate_frame(image, frame_rotation):
 
     参数:
         image (numpy.ndarray): 输入的图像
-        frame_rotation (int): 旋转角度，仅支持0、90、180、270、360
+        image_rotation (int): 旋转角度，仅支持0、90、180、270、360
 
     返回:
         numpy.ndarray: 旋转后的图像
@@ -22,11 +22,11 @@ def rotate_frame(image, frame_rotation):
     if not isinstance(image, np.ndarray):
         logger.error("输入的 image 必须是 numpy.ndarray 类型")
 
-    # 检查 frame_rotation 是否为整数类型
+    # 检查 image_rotation 是否为整数类型
     if not isinstance(frame_rotation, int):
-        logger.error("frame_rotation 必须是整数类型")
+        logger.error("image_rotation 必须是整数类型")
 
-    # 检查 frame_rotation 是否为支持的角度
+    # 检查 image_rotation 是否为支持的角度
     if frame_rotation not in [0, 90, 180, 270, 360]:
         logger.error("frame_rotation必须是0、90、180、270或360中的一个值")
 
@@ -80,7 +80,7 @@ def get_camera_resolution(cap):
     获取指定摄像头的实际分辨率（宽度, 高度）
 
     参数:
-        camera_index (int): 摄像头编号，默认是 0（主摄）
+        local_camera_index (int): 摄像头编号，默认是 0（主摄）
 
     返回:
         (width, height) 如果成功
@@ -101,7 +101,7 @@ def set_camera_resolution(cap, width, height):
     参数:
         width (int): 要设置的宽度
         height (int): 要设置的高度
-        camera_index (int): 摄像头编号，默认是 0（主摄）
+        local_camera_index (int): 摄像头编号，默认是 0（主摄）
     返回:
         True 如果成功
         False 如果打开失败
@@ -384,7 +384,7 @@ def draw_boxes_on_image(frame, boxes, color=(0, 255, 0), thickness=5):
     """
     在图像上绘制多个方框
     参数:
-        frame (numpy.ndarray): 输入图像
+        current_captured_frame (numpy.ndarray): 输入图像
         boxes (list): 包含多个方框的列表，每个方框由四个点的坐标组成
         color (tuple): 方框的颜色，默认为绿色 (0, 255, 0)
         thickness (int): 方框的线宽，默认为 5
@@ -427,9 +427,9 @@ def detect_contour(frame):
     :return: 最可能的文档轮廓和带有边界框的图像帧
     """
     try:
-        # 检查输入的 frame 是否为有效的 numpy 数组
+        # 检查输入的 current_captured_frame 是否为有效的 numpy 数组
         if not isinstance(frame, np.ndarray):
-            logger.error("输入的 frame 必须是 numpy.ndarray 类型的图像")
+            logger.error("输入的 current_captured_frame 必须是 numpy.ndarray 类型的图像")
         if frame.ndim not in [2, 3]:
             logger.error("输入图像维度必须是 2 或 3")
 
@@ -562,7 +562,7 @@ def transform_document(frame):
     扫描文档并进行透视变换
 
     参数:
-        frame (numpy.ndarray): 输入图像
+        current_captured_frame (numpy.ndarray): 输入图像
 
     返回:
         warped (numpy.ndarray): 透视变换后的图像
@@ -570,7 +570,7 @@ def transform_document(frame):
     try:
         # 检查输入是否为有效的 numpy 数组
         if not isinstance(frame, np.ndarray):
-            logger.error("输入的 frame 必须是 numpy.ndarray 类型的图像")
+            logger.error("输入的 current_captured_frame 必须是 numpy.ndarray 类型的图像")
         if frame.ndim not in [2, 3]:
             logger.error("输入图像维度必须是 2 或 3")
 

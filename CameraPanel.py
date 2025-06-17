@@ -11,7 +11,7 @@ class CameraPanel(wx.Panel):
             parent: 父窗口
             desired_width: 期望的摄像头分辨率宽度 (默认值 1280)
             desired_height: 期望的摄像头分辨率高度 (默认值 720)
-            camera_index: 摄像头索引 (默认值 0)
+            local_camera_index: 摄像头索引 (默认值 0)
             fps: 每秒帧数 (默认值 30)
         """
         super().__init__(parent)
@@ -52,7 +52,7 @@ class CameraPanel(wx.Panel):
         # 从摄像头读取下一帧
         ret, frame = self.capture.read()
         if ret:
-            # frame=detect_and_draw_boxes(frame)
+            # current_captured_frame=detect_and_draw_boxes(current_captured_frame)
             # 将图像从BGR转换为RGB
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             h, w = frame.shape[:2]
