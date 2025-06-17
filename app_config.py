@@ -103,11 +103,13 @@ PARAM_LABELS = {
     'save_location': '保存路径',
     'save_naming_format': '命名格式',
     'temp_location': '临时目录',
-    'ip_address': '摄像头地址',
+    'ip_address': '网络摄像头地址',
     'resolution': '分辨率',
     'dpi': '扫描精度',
     'color_mode': '颜色模式',
     'merge_image_interval': '合并图片间隔距离（单位：px）',
+    'use_usb_camera': '是否使用 USB 摄像头',
+    'usb_index': 'USB 摄像头索引'
 }
 
 
