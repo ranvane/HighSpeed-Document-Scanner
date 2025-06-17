@@ -12,7 +12,7 @@ from app_config import get_config, save_config
 # 从自定义配置界面模块中导入配置窗口类
 from config_ui import ConfigFrame  # 这是一个自定义的配置窗口类
 from datetime import datetime
-from utils import save_image,save_pdf,save_multip_pdf,get_save_path
+from utils import save_image,merge_images,save_pdf,save_multip_pdf,get_save_path
 
 # 获取当前脚本所在的目录
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -489,10 +489,18 @@ class Main_Frame(Main_Ui_Frame):
         Args:
             event: 触发事件的事件对象
         """
-        path = get_save_path("pdf")
+        path = get_save_path(suffix="pdf",prefix="合并")
         images_path=self.m_thumbnailgallery.get_images()
         save_multip_pdf(images_path,path)
-
+    def on_merge_photos(self, event):
+        """
+        此方法负责将预览栏中所有图像合并为一个长图片文件。
+        Args:
+            event: 触发事件的事件对象
+        """
+        path = get_save_path(suffix="jpg",prefix="合并")
+        images_path=self.m_thumbnailgallery.get_images()
+        merge_images(images_path,path)
     def on_right_rotation(self, event):
         """
         处理左旋转的事件。

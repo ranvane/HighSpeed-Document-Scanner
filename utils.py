@@ -5,7 +5,7 @@ from loguru import logger
 from PIL import Image
 from datetime import datetime
 from app_config import get_config, save_config
-def get_save_path(suffix="jpg"):
+def get_save_path(suffix="jpg",prefix=None):
     """
     根据配置生成带时间戳的文件保存路径。
 
@@ -22,7 +22,11 @@ def get_save_path(suffix="jpg"):
     naming_format = config.get('PATHS', 'save_naming_format')
     # 生成带时间戳的文件名
     timestamp = datetime.now().strftime(naming_format)
-    file_name = f"{timestamp}.{suffix}"
+    # 拼接文件名
+    if prefix:
+        file_name = f"{prefix}_{timestamp}.{suffix}"
+    else:
+        file_name = f"{timestamp}.{suffix}"
 
     # 确保保存路径存在
     os.makedirs(save_location, exist_ok=True)
@@ -52,6 +56,86 @@ def save_image(frame, path):
         image.SaveFile(path, wx.BITMAP_TYPE_JPEG)
     except Exception as e:
         logger.error(f"保存图像失败: {e}")
+
+def merge_images(image_paths, output_path, direction='vertical', target_size=None, padding=10, bg_color=(255, 255, 255)):
+    """
+    将多张图片合并为一张长图（支持纵向/横向、统一宽高、边距）并保存。
+
+    参数:
+    - image_paths: 图片路径列表
+    - output_path: 合并后的输出路径
+    - direction: 'vertical' 或 'horizontal'，默认 'vertical'
+    - target_size: 统一宽度或高度，单位：像素。例如 target_size=600，
+        - 如果 direction='vertical'，则统一宽度
+        - 如果 direction='horizontal'，则统一高度
+    - padding: 每张图片之间的间距（像素）
+    - bg_color: 背景颜色 (R, G, B)，默认白色
+    """
+    if not image_paths:
+        raise ValueError("图片路径列表为空！")
+
+    try:
+        # 打开图片
+        images = []
+        for path in image_paths:
+            try:
+                img = Image.open(path).convert("RGB")
+                images.append(img)
+            except Exception as e:
+                print(f"跳过无法打开的图片: {path}，错误: {e}")
+
+        if not images:
+            raise RuntimeError("没有可用的图片进行合并。")
+
+        # 可选缩放：统一宽度或高度
+        if target_size is not None:
+            resized_images = []
+            for img in images:
+                if direction == 'vertical':
+                    # 统一宽度，等比缩放高度
+                    w_percent = target_size / img.width
+                    new_height = int(img.height * w_percent)
+                    resized = img.resize((target_size, new_height), Image.LANCZOS)
+                elif direction == 'horizontal':
+                    # 统一高度，等比缩放宽度
+                    h_percent = target_size / img.height
+                    new_width = int(img.width * h_percent)
+                    resized = img.resize((new_width, target_size), Image.LANCZOS)
+                else:
+                    raise ValueError("参数 direction 必须为 'vertical' 或 'horizontal'")
+                resized_images.append(resized)
+            images = resized_images
+
+        # 计算合并后图片尺寸
+        if direction == 'vertical':
+            max_width = max(img.width for img in images)
+            total_height = sum(img.height for img in images) + padding * (len(images) - 1)
+            merged_image = Image.new("RGB", (max_width, total_height), bg_color)
+
+            y = 0
+            for img in images:
+                merged_image.paste(img, ((max_width - img.width) // 2, y))
+                y += img.height + padding
+
+        elif direction == 'horizontal':
+            max_height = max(img.height for img in images)
+            total_width = sum(img.width for img in images) + padding * (len(images) - 1)
+            merged_image = Image.new("RGB", (total_width, max_height), bg_color)
+
+            x = 0
+            for img in images:
+                merged_image.paste(img, (x, (max_height - img.height) // 2))
+                x += img.width + padding
+
+        else:
+            raise ValueError("参数 direction 只能为 'vertical' 或 'horizontal'")
+
+        merged_image.save(output_path)
+        print(f"图片合并成功，保存为: {output_path}")
+
+    except Exception as e:
+        print(f"图片合并失败: {e}")
+
 
 def save_pdf(frame, path, dpi=300):
     """
