@@ -500,7 +500,8 @@ class Main_Frame(Main_Ui_Frame):
         """
         path = get_save_path(suffix="jpg",prefix="合并")
         images_path=self.m_thumbnailgallery.get_images()
-        merge_images(images_path,path)
+        padding=self.config.get('SCANNER', 'merge_image_interval')
+        merge_images(images_path,path,padding=padding)
     def on_right_rotation(self, event):
         """
         处理左旋转的事件。

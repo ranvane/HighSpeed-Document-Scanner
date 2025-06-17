@@ -93,7 +93,8 @@ DEFAULT_CONFIG = {
     },
     'SCANNER': {
         'dpi': '300',
-        'color_mode': 'rgb'
+        'color_mode': 'rgb',
+        'merge_image_interval': '5',  # 合并图片间隔（单位：px）
     }
 }
 
@@ -106,6 +107,7 @@ PARAM_LABELS = {
     'resolution': '分辨率',
     'dpi': '扫描精度',
     'color_mode': '颜色模式',
+    'merge_image_interval': '合并图片间隔距离（单位：px）',
 }
 
 
