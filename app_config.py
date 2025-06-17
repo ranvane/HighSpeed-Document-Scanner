@@ -83,7 +83,7 @@ DEFAULT_CONFIG = {
     'PATHS': {
         'save_location': str(save_folder),
         'save_naming_format': '%Y%m%d_%H%M%S',
-        'temp_location': 'temp'
+        'temp_location': str(save_folder)
     },
     'CAMERA': {
         'ip_address': 'http://admin:admin@192.168.10.10:8081/',  # 网络摄像头地址
@@ -112,6 +112,22 @@ PARAM_LABELS = {
     'usb_index': 'USB 摄像头索引'
 }
 
+# option对应的控件类型
+OPTION_CONTROLS = {
+    'save_location': 'folder_picker',
+    'temp_location': 'folder_picker',
+    'use_usb_camera': 'checkbox',
+    'dpi': 'text',
+    'merge_image_interval': 'text',
+    'usb_index': 'text',
+    # 可以继续补充
+}
+
+def get_option_control_type(option):
+    """
+    根据 option 名称返回控件类型字符串
+    """
+    return OPTION_CONTROLS.get(option, 'text')
 
 def reset_config_to_default():
     """
