@@ -576,18 +576,13 @@ class Main_Frame(Main_Ui_Frame):
     def _release_camera_resources(self):
         """释放旧摄像头资源与线程"""
         try:
-            if hasattr(self, "camera_capture") and self.is_camera_capture_running == True:
+            if hasattr(self, "capture_thread") and self.capture_thread and self.capture_thread.is_alive():
                 self.is_camera_capture_running = False
-                try:
-                    self.camera_capture.release()
-                    logger.debug("释放摄像头资源成功")
-
-                    if hasattr(self, "capture_thread") and self.capture_thread.is_alive():
-                        logger.debug("等待旧摄像头线程结束")
-                        self.capture_thread.join(timeout=1)
-
-                except Exception as e:
-                    logger.warning(f"释放摄像头线程异常: {e}")
+                self.capture_thread.join(timeout=1)
+            if hasattr(self, "camera_capture") and self.camera_capture is not None:
+                self.camera_capture.release()
+        except Exception as e:
+            logger.error(f"释放摄像头失败: {e}")
             # 检查是否使用网络摄像头且摄像头可读取
             if self.use_webcam and self.webcam_url:
                 # 保存网络摄像头 IP 地址到配置文件
