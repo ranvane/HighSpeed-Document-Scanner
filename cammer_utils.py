@@ -1,4 +1,5 @@
 import cv2
+import time
 import numpy as np
 from loguru import logger
 
@@ -127,24 +128,25 @@ def set_camera_resolution(cap, width, height):
         logger.error(f'设置指定摄像头的分辨率失败：{e}')
 
 
-def count_cameras():
-    '''
-    检测电脑上的摄像头数量
-    :return: 摄像头数量
-    '''
+def count_cameras(max_tested=10):
+    """
+    检测电脑上的摄像头数量，最多测试 max_tested 个编号
+    """
     count = 0
-    for i in range(10):  # 尝试前10个ID
+    for i in range(max_tested):
+        cap = None
         try:
-            cap = cv2.VideoCapture(i)
-            ret, _ = cap.read()
-            if not ret:
-                break
-            else:
+            cap = cv2.VideoCapture(i, cv2.CAP_DSHOW)  # 或 cv2.CAP_V4L2 / cv2.CAP_FFMPEG
+            time.sleep(0.2)  # 给摄像头时间初始化
+            ret, frame = cap.read()
+            if ret and frame is not None:
                 count += 1
+            else:
+                break  # 这里可以 break 或 continue，看你是否想跳过失败的设备
         except Exception as e:
-            logger.error(f"尝试访问摄像头 {i} 时出错: {e}")
+            print(f"错误：摄像头 {i} 无法访问: {e}")
         finally:
-            if 'cap' in locals() and cap.isOpened():
+            if cap is not None:
                 cap.release()
     return count
 

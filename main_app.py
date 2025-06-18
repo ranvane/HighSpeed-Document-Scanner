@@ -2,6 +2,7 @@ import wx
 import os
 import threading
 import time
+import numpy as np
 import cv2
 # 从自定义模块中导入主用户界面框架类
 from Document_Scanner_UI import Main_Ui_Frame
@@ -12,7 +13,7 @@ from app_config import get_config, save_config
 # 从自定义配置界面模块中导入配置窗口类
 from config_ui import ConfigFrame  # 这是一个自定义的配置窗口类
 from datetime import datetime
-from utils import save_image,merge_images,save_pdf,save_multip_pdf,get_save_path
+from utils import save_image,merge_images,save_pdf,save_multip_pdf,get_save_path,SCRFD,measure_time
 
 # 获取当前脚本所在的目录
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -22,7 +23,6 @@ class Main_Frame(Main_Ui_Frame):
     主应用程序框架类，继承自 Main_Ui_Frame。
     负责管理摄像头操作、用户界面交互以及配置管理等功能。
     """
-
 
     def __init__(self):
         """
@@ -70,6 +70,11 @@ class Main_Frame(Main_Ui_Frame):
         # 缩略图最大尺寸
         self.thumb_max_size=(256, 256)
 
+        # 定义 ONNX 模型文件的路径
+        onnxmodel = 'models/cv_resnet18_card_correction.onnx'
+        # 创建 SCRFD 类的实例，传入 ONNX 模型路径、置信度阈值和 NMS 阈值
+        self.card_net = SCRFD(onnxmodel)
+
         # 打印是否使用 USB 摄像头的配置信息
         logger.debug(self.config.getboolean('CAMERA', 'use_usb_camera'))
         # 打印是否使用 USB 摄像头的配置信息
@@ -113,11 +118,7 @@ class Main_Frame(Main_Ui_Frame):
                 self.m_checkBox_show_camera2_image.Enable(False)
                 self.m_checkBox_web_camera.SetValue(True)
             parent_sizer.Layout()
-            # self.GetSizer().Layout()
-            # self.Refresh()
-            # self.Update()
-            # self.Layout()
-            # self.Refresh()
+
 
     def switch_to_local_camera(self):
         """切换到本地摄像头模式"""
@@ -192,6 +193,7 @@ class Main_Frame(Main_Ui_Frame):
         # 获取可用摄像头数量
         camera_nums = count_cameras()
 
+
         # 如果有可用摄像头
         if camera_nums > 0:
             logger.info(f"检测到 {camera_nums} 个摄像头")
@@ -238,121 +240,115 @@ class Main_Frame(Main_Ui_Frame):
                 self.m_comboBox_select_camera_resolution.SetSelection(index)
         else:
             self.camera_capture=None
-            logger.error("未找到可用摄像头")
+            logger.error("本地未找到可用摄像头")
 
     def start_camera(self):
-        """
-        初始化摄像头并启动摄像头线程。
-        此方法负责根据用户选择的摄像头和分辨率进行初始化，并启动一个独立的线程来更新摄像头帧。
+        """初始化摄像头并启动采集线程"""
 
-        Raises:
-            RuntimeError: 如果无法打开摄像头，则抛出运行时错误。
-        """
-        frame_interval_ms = 1000 // self.fps
-        try:
-            if hasattr(self, "camera_capture") and self.camera_capture is not None:
-                logger.debug("新连接前释放摄像头资源")
-                self.is_camera_capture_running = False
-                try:
-                    self.camera_capture.release()
-                    if hasattr(self, "capture_thread") and self.capture_thread.is_alive():
-                        logger.debug("新连接前释放摄像头摄像头线程")
-                        self.capture_thread.join(timeout=1)
-                except Exception as e:
-                    logger.warning(f"新连接前释放摄像头摄像头线程: {e}")
-                    wx.CallAfter(wx.MessageBox, f"新连接前释放摄像头摄像头线程: {e}", "警告", wx.OK | wx.ICON_WARNING)
-        except Exception as e:
-            logger.error(f"新连接前释放摄像头资源: {e}")
-            wx.CallAfter(wx.MessageBox, f"新连接前释放摄像头资源: {e}", "错误", wx.OK | wx.ICON_ERROR)
-            return
+        self._release_camera_resources()
 
+        # 初始化摄像头
         if self.use_webcam:
             self.webcam_ip_address = self.m_web_camera_address.GetValue()
             if not self.webcam_ip_address:
-                logger.error("网络摄像头地址不正确")
-                wx.CallAfter(wx.MessageBox, "网络摄像头地址不正确", "错误", wx.OK | wx.ICON_ERROR)
+                self._show_error("网络摄像头地址不正确")
                 return
+
             logger.info(f"网络摄像头地址: {self.webcam_ip_address}")
             self.init_web_camera()
             if self.camera_capture:
                 self.camera_resolution = get_camera_resolution(self.camera_capture)
             else:
-                wx.CallAfter(wx.MessageBox, "无法连接网络摄像头", "错误", wx.OK | wx.ICON_ERROR)
+                self._show_error("无法连接网络摄像头")
+                self._release_camera_resources()
                 return
         else:
+
             self.init_local_camera()
+
             if not self.camera_capture:
-                wx.CallAfter(wx.MessageBox, "无法初始化本地摄像头", "错误", wx.OK | wx.ICON_ERROR)
+                self._show_error("无法初始化本地摄像头")
+                self._release_camera_resources()
+                print("------------")
                 return
 
-        if self.camera_capture:
-            try:
-                # 获取 m_bitmap_camera 所在 sizer 的尺寸
-                sizer = self.m_bitmap_camera.GetContainingSizer()
-                if sizer:
-                    sizer_size = sizer.GetSize()
-                    self.m_bitmap_camera.SetSize(sizer_size)
-                    self.camera_resolution = sizer_size  # 以 sizer 尺寸作为显示分辨率
+        # 启动采集线程
+        try:
+            self._prepare_display_area()
+            self.is_camera_capture_running = True
 
-                self.m_bitmap_camera.SetSize(self.camera_resolution)
-                self.is_camera_capture_running = True
-                self.capture_thread = threading.Thread(
-                    target=self.update_frame,
-                    args=(frame_interval_ms, ),
-                    daemon=True)
-                self.capture_thread.start()
-                logger.info("摄像头线程已启动")
-            except Exception as e:
-                logger.exception(f"启动摄像头时出错: {e}")
-                wx.CallAfter(wx.MessageBox, str(e), "错误", wx.OK | wx.ICON_ERROR)
-        else:
-            logger.error("无法打开摄像头")
-            wx.CallAfter(wx.MessageBox, "没有找到摄像头", "没有找到摄像头", wx.OK | wx.ICON_ERROR)
-    def update_frame(self, frame_interval_ms):
+            frame_interval_ms = 1000 / self.fps  # ✅ 推荐这样传参清晰
+            self.capture_thread = threading.Thread(
+                target=self.update_frame,
+                args=(frame_interval_ms,),
+                daemon=True
+            )
+            self.capture_thread.start()
+            logger.info("摄像头线程已启动")
+
+        except Exception as e:
+            logger.exception(f"启动摄像头时出错: {e}")
+            self._show_error(str(e))
+            self._release_camera_resources()
+
+    @measure_time
+    def update_frame(self, target_fps=30):
         """
         更新摄像头帧的线程方法。
-        此方法在一个独立的线程中运行，持续从摄像头读取帧并进行处理。
-        如果启用了方框检测，则在帧上绘制方框。然后将帧转换为 wx.Bitmap 格式，
-        并调用 update_bitmap 方法更新显示的位图。
 
         Args:
-            frame_interval_ms (int): 帧更新的时间间隔（毫秒）。
+            target_fps (int): 目标帧率（每秒帧数），默认30。
         """
+        # 计算每帧之间的时间间隔（秒）
+        frame_interval_sec = 1.0 / target_fps
+
+        # 当摄像头正常打开且捕获线程运行标志为 True 时，持续循环
         while self.camera_capture.isOpened() and self.is_camera_capture_running:
-            # 从摄像头读取一帧图像
+            # 记录当前时间，用于计算处理一帧图像的耗时
+            start_time = time.time()
+
+            # 从摄像头读取一帧图像，ret 表示是否成功读取，frame 为读取的图像帧
             ret, frame = self.camera_capture.read()
 
-            if ret:
-                # 根据 self.image_rotation 旋转图像
-                frame = rotate_frame(frame, self.image_rotation)
-                # 保存原始帧
+            if ret:  # 如果成功读取到图像帧
+
+                # 复制旋转后的图像帧，作为当前捕获的图像帧
                 self.current_captured_frame = frame.copy()
+                # 根据设置的旋转角度对图像进行旋转
+                frame = rotate_frame(self.current_captured_frame, self.image_rotation)
 
-                # 如果启用了曲面展平，则在帧上绘制曲面展平后的图像
+                # 如果启用了曲面展平功能
                 if self.is_surface_rectification_enabled:
+                    # 对图像进行曲面展平处理
                     frame = transform_document(frame)
-                else:
-                    # 如果启用了文档检测，则在帧上绘制边框
-                    if self.is_document_outline_detection_enabled:
-                        _contour, frame = detect_contour(frame)
-                        # 绘制边界框
-                        if _contour is not None:
-                            frame = draw_boxes_on_image(frame, _contour)
+                # 如果启用了方框检测功能
+                elif self.is_document_outline_detection_enabled:
+                    # 检测图像中的轮廓，_contour 为检测到的轮廓，frame 为处理后的图像
+                    _contour, frame = detect_contour(frame)
+                    if _contour is not None:  # 如果检测到轮廓
+                        # 在图像上绘制方框
+                        frame = draw_boxes_on_image(frame, _contour)
+                    else:
+                        logger.debug("未检测到轮廓")
 
-                # 将图像从 BGR 转换为 RGB
+                # 将图像颜色空间从 BGR 转换为 RGB，以适应 wxPython 的显示要求
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                # 确保数组在内存中是连续存储的，提升性能
+                frame = np.ascontiguousarray(frame)
                 # 获取图像的高度和宽度
                 h, w = frame.shape[:2]
-                # 创建 wx.Image 对象
-                image = wx.Image(w, h)
-                # 设置图像数据
-                image.SetData(frame.tobytes())
-                # 转换为 wx.Bitmap
-                self.bitmap = wx.Bitmap(image)
-                # 在主线程中调用 update_bitmap 方法
+                # 从 NumPy 数组创建 wx.Bitmap 对象，用于后续在界面上显示
+                self.bitmap = wx.Bitmap.FromBuffer(w, h, frame)
+
+                # 异步调用 update_bitmap 方法，确保在主线程中更新 UI
                 wx.CallAfter(self.update_bitmap)
-            # 控制帧率
-            time.sleep(frame_interval_ms / 1000.0)
+
+            # 计算从开始读取帧到当前的处理耗时
+            elapsed = time.time() - start_time
+            # 计算需要休眠的时间，确保帧率稳定，若为负数则取 0
+            sleep_time = max(0, frame_interval_sec - elapsed)
+            # 线程休眠相应时间，维持固定帧率
+            time.sleep(sleep_time)
 
     def update_bitmap(self):
         """
@@ -390,7 +386,7 @@ class Main_Frame(Main_Ui_Frame):
             # 刷新窗口
             self.Refresh()
 
-    def on_detect_squares(self, event):
+    def on_document_outline_detection(self, event):
         """
         处理方框检测的事件。
         此方法负责切换是否启用方框检测功能，并更新相关的 UI 组件。
@@ -440,7 +436,7 @@ class Main_Frame(Main_Ui_Frame):
             frame = self.current_captured_frame
             save_image(frame, path)
 
-            self.m_thumbnailgallery.add_image(path)
+            wx.CallAfter(self.m_thumbnailgallery.add_image, path)
         else:
             logger.error("没有捕获到图像")
             return
@@ -502,6 +498,42 @@ class Main_Frame(Main_Ui_Frame):
         images_path=self.m_thumbnailgallery.get_images()
         padding=self.config.get('SCANNER', 'merge_image_interval')
         merge_images(images_path,path,padding=padding)
+
+    def on_take_card(self, event):
+        """
+        拍照并保存检测到的卡片图像
+        """
+        if self.current_captured_frame is None:
+            wx.CallAfter(wx.MessageBox, "当前没有可用图像帧", "错误", wx.OK | wx.ICON_ERROR)
+            return
+
+        frame = self.current_captured_frame
+        outimg, corner_points_list = self.card_net.detect(frame)
+
+        if not corner_points_list:
+            logger.warning("未检测到任何卡片")
+            wx.CallAfter(wx.MessageBox, "未检测到任何卡片", "提示", wx.OK | wx.ICON_INFORMATION)
+            return
+
+        logger.info(f"检测到 {len(corner_points_list)} 个卡片")
+        crops = []
+
+        for i, corner_points in enumerate(corner_points_list):
+            points = np.array(corner_points)
+            x, y, w, h = cv2.boundingRect(points)
+            crops.append((x, y, w, h))
+
+        if crops:
+            x, y, w, h = crops[0]
+            cropped = frame[y:y + h, x:x + w]
+            # cropped = cv2.resize(cropped, (800, 500)) # 保存为缩略图
+
+            # 构建保存路径
+            path = get_save_path("jpg", prefix="卡片")
+            save_image(cropped, path)
+            wx.CallAfter(self.m_thumbnailgallery.add_image, path)
+
+
     def on_right_rotation(self, event):
         """
         处理左旋转的事件。
@@ -530,6 +562,46 @@ class Main_Frame(Main_Ui_Frame):
         # 记录旋转后的角度信息
         logger.debug(f"执行右旋转操作，当前累计旋转角度: {self.image_rotation} 度")
 
+    def _prepare_display_area(self):
+        """根据布局设置摄像头显示区域尺寸"""
+        # 获取包含摄像头图像的 sizer
+        sizer = self.m_bitmap_camera.GetContainingSizer()
+        if sizer:
+            # 如果 sizer 存在，获取其尺寸
+            size = sizer.GetSize()
+            # 设置摄像头图像控件的尺寸为 sizer 的尺寸
+            self.m_bitmap_camera.SetSize(size)
+            # 将摄像头显示区域的尺寸设置为与 sizer 尺寸一致
+            self.camera_resolution = size  # 以 sizer 尺寸为准
+    def _release_camera_resources(self):
+        """释放旧摄像头资源与线程"""
+        try:
+            if hasattr(self, "camera_capture") and self.is_camera_capture_running == True:
+                self.is_camera_capture_running = False
+                try:
+                    self.camera_capture.release()
+                    logger.debug("释放摄像头资源成功")
+
+                    if hasattr(self, "capture_thread") and self.capture_thread.is_alive():
+                        logger.debug("等待旧摄像头线程结束")
+                        self.capture_thread.join(timeout=1)
+
+                except Exception as e:
+                    logger.warning(f"释放摄像头线程异常: {e}")
+            # 检查是否使用网络摄像头且摄像头可读取
+            if self.use_webcam and self.webcam_url:
+                # 保存网络摄像头 IP 地址到配置文件
+                self.config.set('CAMERA', 'ip_address', self.webcam_url)
+                save_config(self.config)
+                logger.info(f"已保存网络摄像头 IP 地址: {self.webcam_url}")
+        except Exception as e:
+            logger.error(f"释放摄像头异常: {e}")
+            self._show_error(f"释放摄像头资源异常: {e}")
+
+    def _show_error(self, message, title="错误"):
+        logger.error(message)
+        wx.CallAfter(wx.MessageBox, message, title, wx.OK | wx.ICON_ERROR)
+
     def on_close(self, event):
         """
         程序退出时的处理方法。
@@ -544,21 +616,9 @@ class Main_Frame(Main_Ui_Frame):
         # 停止线程
         logger.debug("正在停止摄像头线程")
 
-        if hasattr(self, "capture"
-                   ) and self.camera_capture is not None and self.camera_capture.isOpened():
-            # 停止摄像头捕获线程
-            self.is_camera_capture_running = False
-            # 释放摄像头资源
-            self.camera_capture.release()
-            # 等待线程结束
-            self.capture_thread.join()
+        self._release_camera_resources()
 
-            # 检查是否使用网络摄像头且摄像头可读取
-            if self.use_webcam and self.webcam_url:
-                # 保存网络摄像头 IP 地址到配置文件
-                self.config.set('CAMERA', 'ip_address', self.webcam_url)
-                save_config(self.config)
-                logger.info(f"已保存网络摄像头 IP 地址: {self.webcam_url}")
+
         logger.debug("摄像头线程已停止")
 
         # 销毁主窗口
