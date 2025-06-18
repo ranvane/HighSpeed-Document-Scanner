@@ -427,19 +427,33 @@ class Main_Frame(Main_Ui_Frame):
         此方法负责拍照并保存摄像头获得的原始图像。
 
         Args:
-            event: 触发事件的事件对象
+            event: 触发事件的事件对象，通常由用户点击拍照按钮等操作触发。
         """
-        if self.current_captured_frame is not None:
-            # 构建保存文件的完整路径
-            path = path = get_save_path()
-            # 保存图像
-            frame = self.current_captured_frame
-            save_image(frame, path)
 
-            wx.CallAfter(self.m_thumbnailgallery.add_image, path)
+        if self.current_captured_frame is not None:
+            try:
+                # 构建保存文件的完整路径
+                if self.m_checkBox_saveByGroup.IsChecked():
+                    logger.info(f"保存文件到组: {self.m_TextCtrl_GroupName.GetValue()}")
+                    path = get_save_path(group_name=self.m_TextCtrl_GroupName.GetValue())
+                else:
+                    path = get_save_path()
+
+                # 保存图像
+                frame = self.current_captured_frame
+                save_image(frame, path)
+
+                if self.m_checkBox_saveByGroup.IsChecked():
+                    wx.CallAfter(self.m_thumbnailgallery.add_image, path,group_name=self.m_TextCtrl_GroupName.GetValue(),)
+                else:
+                    wx.CallAfter(self.m_thumbnailgallery.add_image, path)
+            except Exception as e:
+                logger.error(f"on_take_photo 保存图像时出错: {e}")
+                self._show_error(f"保存图像失败: {e}")
         else:
-            logger.error("没有捕获到图像")
+            logger.error("on_take_photo 没有捕获到图像")
             return
+
 
     def on_take_document(self, event):
         """
@@ -449,17 +463,29 @@ class Main_Frame(Main_Ui_Frame):
             event: 触发事件的事件对象
         """
         if self.current_captured_frame is not None:
-            # 构建保存文件的完整路径
-            path = path = get_save_path()
-            # 保存图像
-            # 对图像进行曲面展平处理
-            logger.debug("保存曲面展平处理后的图像")
-            frame = transform_document(self.current_captured_frame)
+            try:
+                # 构建保存文件的完整路径
+                if self.m_checkBox_saveByGroup.IsChecked():
+                    logger.info(f"保存文件到组: {self.m_TextCtrl_GroupName.GetValue()}")
+                    path = get_save_path(group_name=self.m_TextCtrl_GroupName.GetValue())
+                else:
+                    path = get_save_path()
+                # 保存图像
+                # 对图像进行曲面展平处理
+                logger.debug("保存曲面展平处理后的图像")
+                frame = transform_document(self.current_captured_frame)
 
-            save_image(frame, path)
+                save_image(frame, path)
 
+                if self.m_checkBox_saveByGroup.IsChecked():
+                    wx.CallAfter(self.m_thumbnailgallery.add_image, path,group_name=self.m_TextCtrl_GroupName.GetValue(),)
+                else:
+                    wx.CallAfter(self.m_thumbnailgallery.add_image, path)
+            except Exception as e:
+                logger.error(f"on_take_document 保存图像时出错: {e}")
+                self._show_error(f"保存图像失败: {e}")
         else:
-            logger.error("没有捕获到图像")
+            logger.error("on_take_document 没有捕获到图像")
             return
     def on_take_pdf_doc(self, event):
         """
@@ -468,16 +494,23 @@ class Main_Frame(Main_Ui_Frame):
             event: 触发事件的事件对象
         """
         if self.current_captured_frame is not None:
-            # 构建保存文件的完整路径
-            path = get_save_path("pdf")
+            try:
+                # 构建保存文件的完整路径
+                if self.m_checkBox_saveByGroup.IsChecked():
+                    logger.info(f"保存文件到组: {self.m_TextCtrl_GroupName.GetValue()}")
+                    path = get_save_path(suffix="pdf",group_name=self.m_TextCtrl_GroupName.GetValue())
+                else:
+                    path = get_save_path("pdf")
 
-            # 对图像进行曲面展平处理
-            logger.debug("保存曲面展平处理后的图像为 PDF 文件")
-            frame = transform_document(self.current_captured_frame)
-            save_pdf([frame], path)
-
+                # 对图像进行曲面展平处理
+                logger.debug("保存曲面展平处理后的图像为 PDF 文件")
+                frame = transform_document(self.current_captured_frame)
+                save_pdf([frame], path)
+            except Exception as e:
+                logger.error(f"on_take_pdf_doc 保存PDF文件时出错: {e}")
+                self._show_error(f"保存PDF文件失败: {e}")
         else:
-            logger.error("没有捕获到图像")
+            logger.error("on_take_pdf_doc 没有捕获到图像")
             return
     def on_take_mutip_pdf_doc(self, event):
         """
@@ -485,53 +518,86 @@ class Main_Frame(Main_Ui_Frame):
         Args:
             event: 触发事件的事件对象
         """
-        path = get_save_path(suffix="pdf",prefix="合并")
-        images_path=self.m_thumbnailgallery.get_images()
-        save_multip_pdf(images_path,path)
+        try:
+            # 构建保存文件的完整路径
+            if self.m_checkBox_saveByGroup.IsChecked():
+                logger.info(f"保存文件到组: {self.m_TextCtrl_GroupName.GetValue()}")
+                path = get_save_path(suffix="pdf",prefix="合并", group_name=self.m_TextCtrl_GroupName.GetValue())
+            else:
+                path = get_save_path(suffix="pdf",prefix="合并")
+
+            images_path=self.m_thumbnailgallery.get_images()
+            save_multip_pdf(images_path,path)
+        except Exception as e:
+            logger.error(f"on_take_mutip_pdf_doc 批量合并保存PDF文件时出错: {e}")
+            self._show_error('批量合并保存PDF文件时出错!')
     def on_merge_photos(self, event):
         """
         此方法负责将预览栏中所有图像合并为一个长图片文件。
         Args:
             event: 触发事件的事件对象
         """
-        path = get_save_path(suffix="jpg",prefix="合并")
-        images_path=self.m_thumbnailgallery.get_images()
-        padding=self.config.get('SCANNER', 'merge_image_interval')
-        merge_images(images_path,path,padding=padding)
+        try:
+            # 构建保存文件的完整路径
+            if self.m_checkBox_saveByGroup.IsChecked():
+                logger.info(f"保存文件到组: {self.m_TextCtrl_GroupName.GetValue()}")
+                path = get_save_path(suffix="jpg",prefix="合并",group_name=self.m_TextCtrl_GroupName.GetValue())
+            else:
+                path = get_save_path(suffix="jpg",prefix="合并")
+
+
+            images_path=self.m_thumbnailgallery.get_images()
+            padding=self.config.get('SCANNER', 'merge_image_interval')
+            merge_images(images_path,path,padding=padding)
+        except Exception as e:
+            logger.error(f"on_merge_photos 合并图片时出错: {e}")
+            self._show_error('合并图片时出错!')
 
     def on_take_card(self, event):
         """
         拍照并保存检测到的卡片图像
         """
-        if self.current_captured_frame is None:
-            wx.CallAfter(wx.MessageBox, "当前没有可用图像帧", "错误", wx.OK | wx.ICON_ERROR)
+        if self.current_captured_frame is not None:
+            try:
+
+                frame = self.current_captured_frame
+                outimg, corner_points_list = self.card_net.detect(frame)
+
+                if not corner_points_list:
+                    logger.warning("未检测到任何卡片")
+                    wx.CallAfter(wx.MessageBox, "未检测到任何卡片", "提示", wx.OK | wx.ICON_INFORMATION)
+                    return
+
+                logger.info(f"检测到 {len(corner_points_list)} 个卡片")
+                crops = []
+
+                for i, corner_points in enumerate(corner_points_list):
+                    points = np.array(corner_points)
+                    x, y, w, h = cv2.boundingRect(points)
+                    crops.append((x, y, w, h))
+
+                if crops:
+                    x, y, w, h = crops[0]
+                    cropped = frame[y:y + h, x:x + w]
+                    # cropped = cv2.resize(cropped, (800, 500)) # 保存为缩略图
+
+                    if self.m_checkBox_saveByGroup.IsChecked():
+                        logger.info(f"保存文件到组: {self.m_TextCtrl_GroupName.GetValue()}")
+                        path = get_save_path(suffix="jpg", prefix="卡片", group_name=self.m_TextCtrl_GroupName.GetValue())
+                    else:
+                        path = get_save_path(suffix="jpg", prefix="卡片")
+
+                    save_image(cropped, path)
+                    if self.m_checkBox_saveByGroup.IsChecked():
+                        wx.CallAfter(self.m_thumbnailgallery.add_image, path, group_name=self.m_TextCtrl_GroupName.GetValue(), )
+                    else:
+                        wx.CallAfter(self.m_thumbnailgallery.add_image, path)
+            except Exception as e:
+                logger.error(f"on_take_card 保存卡片图像时出错: {e}")
+                self._show_error(f"保存卡片图像失败: {e}")
+        else:
+            logger.error("on_take_card 没有捕获到图像")
             return
-
-        frame = self.current_captured_frame
-        outimg, corner_points_list = self.card_net.detect(frame)
-
-        if not corner_points_list:
-            logger.warning("未检测到任何卡片")
-            wx.CallAfter(wx.MessageBox, "未检测到任何卡片", "提示", wx.OK | wx.ICON_INFORMATION)
-            return
-
-        logger.info(f"检测到 {len(corner_points_list)} 个卡片")
-        crops = []
-
-        for i, corner_points in enumerate(corner_points_list):
-            points = np.array(corner_points)
-            x, y, w, h = cv2.boundingRect(points)
-            crops.append((x, y, w, h))
-
-        if crops:
-            x, y, w, h = crops[0]
-            cropped = frame[y:y + h, x:x + w]
-            # cropped = cv2.resize(cropped, (800, 500)) # 保存为缩略图
-
-            # 构建保存路径
-            path = get_save_path("jpg", prefix="卡片")
-            save_image(cropped, path)
-            wx.CallAfter(self.m_thumbnailgallery.add_image, path)
 
 
     def on_right_rotation(self, event):
@@ -561,7 +627,22 @@ class Main_Frame(Main_Ui_Frame):
         self.image_rotation = (self.image_rotation - 90) % 360
         # 记录旋转后的角度信息
         logger.debug(f"执行右旋转操作，当前累计旋转角度: {self.image_rotation} 度")
-
+    def on_checkBox_saveByGroup(self, event):
+        """
+        处理分组保存复选框的事件。
+        此方法负责根据复选框的状态更新界面的显示，并记录日志。
+        Args:
+            event: 触发事件的事件对象
+        """
+        # 检查复选框的状态
+        if event.IsChecked():
+            # 如果复选框被选中，则分组名称输入框可以输入文本
+            self.m_TextCtrl_GroupName.Enable(True)
+            logger.debug("启用分组保存功能")
+        else:
+            # 如果复选框未被选中，则分组名称输入框不可输入文本
+            self.m_TextCtrl_GroupName.Enable(False)
+            logger.debug("禁用分组保存功能")
     def _prepare_display_area(self):
         """根据布局设置摄像头显示区域尺寸"""
         # 获取包含摄像头图像的 sizer

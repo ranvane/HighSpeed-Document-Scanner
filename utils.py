@@ -18,7 +18,7 @@ def measure_time(func):
         print(f"{func.__name__} 执行时间: {exec_time:.4f} 秒")
         return result
     return wrapper
-def get_save_path(suffix="jpg",prefix=None):
+def get_save_path(suffix="jpg",group_name=None,prefix=None):
     """
     根据配置生成带时间戳的文件保存路径。
 
@@ -41,6 +41,9 @@ def get_save_path(suffix="jpg",prefix=None):
     else:
         file_name = f"{timestamp}.{suffix}"
 
+    # 生成保存文件的完整路径
+    if group_name:
+        save_location = os.path.join(save_location, group_name)
     # 确保保存路径存在
     os.makedirs(save_location, exist_ok=True)
 

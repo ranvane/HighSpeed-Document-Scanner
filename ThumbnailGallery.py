@@ -110,9 +110,11 @@ class ThumbnailGallery(wx.Panel):
         sizer.Add(self.scroll, 1, wx.EXPAND)
         self.SetSizer(sizer)
 
-    def add_image(self, path):
+    def add_image(self, path,group_name=None):
         index = len(self.thumbnails) + 1
         thumb = Thumbnail(self.scroll, path, self, self.thumb_max_size)
+        if group_name:
+            thumb.set_group(group_name)
         thumb.set_index(index)
         self.thumbnails.append(thumb)
         self.grid.Add(thumb, 0, wx.ALL | wx.EXPAND, 4)

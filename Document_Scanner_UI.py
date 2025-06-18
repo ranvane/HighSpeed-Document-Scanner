@@ -55,6 +55,15 @@ class Main_Ui_Frame ( wx.Frame ):
         self.m_checkBox_web_camera = wx.CheckBox( self, wx.ID_ANY, _(u"使用网络摄像头"), wx.DefaultPosition, wx.DefaultSize, 0 )
         m_item_bSizer.Add( self.m_checkBox_web_camera, 0, wx.ALL|wx.EXPAND, 5 )
 
+        self.m_TextCtrl_GroupName = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 150,-1 ), 0 )
+        self.m_TextCtrl_GroupName.SetMaxLength( 150 )
+        self.m_TextCtrl_GroupName.Enable( False )
+
+        m_item_bSizer.Add( self.m_TextCtrl_GroupName, 0, wx.ALL|wx.EXPAND, 5 )
+
+        self.m_checkBox_saveByGroup = wx.CheckBox( self, wx.ID_ANY, _(u"分组保存"), wx.DefaultPosition, wx.DefaultSize, 0 )
+        m_item_bSizer.Add( self.m_checkBox_saveByGroup, 0, wx.ALL|wx.EXPAND, 5 )
+
 
         m_item_bSizer.Add( ( 0, 0), 1, wx.EXPAND, 5 )
 
@@ -139,6 +148,7 @@ class Main_Ui_Frame ( wx.Frame ):
         # Connect Events
         self.Bind( wx.EVT_CLOSE, self.on_close )
         self.m_checkBox_web_camera.Bind( wx.EVT_CHECKBOX, self.on_use_webcam )
+        self.m_checkBox_saveByGroup.Bind( wx.EVT_CHECKBOX, self.on_checkBox_saveByGroup )
         self.m_checkBox_detect_squares.Bind( wx.EVT_CHECKBOX, self.on_document_outline_detection )
         self.m_checkBox_rectify_surface.Bind( wx.EVT_CHECKBOX, self.on_rectify_surface )
         self.m_button_left_rotation.Bind( wx.EVT_BUTTON, self.on_left_rotation )
@@ -161,6 +171,9 @@ class Main_Ui_Frame ( wx.Frame ):
         event.Skip()
 
     def on_use_webcam( self, event ):
+        event.Skip()
+
+    def on_checkBox_saveByGroup( self, event ):
         event.Skip()
 
     def on_document_outline_detection( self, event ):
