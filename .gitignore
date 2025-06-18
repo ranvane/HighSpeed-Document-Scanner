@@ -177,3 +177,13 @@ test.png
 test.py
 test_CameraPanel.py
 CameraPanel.py!/test.py
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+# Add PyInstaller build output directories
+build/
+dist/
+# Add any generated .spec files
+*.spec
