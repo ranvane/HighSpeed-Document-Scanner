@@ -187,3 +187,5 @@ build/
 dist/
 # Add any generated .spec files
 *.spec
+/testimages
+/Picture
