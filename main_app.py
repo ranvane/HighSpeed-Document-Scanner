@@ -51,6 +51,8 @@ class Main_Frame(Main_Ui_Frame):
         self.camera_capture = None
         # 摄像头捕获线程，初始为 None
         self.capture_thread = None
+        # update_bitmap中画布缓存，初始为 None
+        self.canvas_cache = None
 
         # 设置默认分辨率(优先选择 1920x1440)
         self.PREFERRED_RESOLUTION = (1920, 1440)
@@ -394,18 +396,23 @@ class Main_Frame(Main_Ui_Frame):
 
         # 创建与控件一样大的背景画布（可改成白色或其他颜色）
         # canvas = np.zeros((camera_height, camera_width, 3), dtype=np.uint8) # 白色背景
-        canvas = np.full((camera_height, camera_width, 3), (200, 200, 200), dtype=np.uint8)  # 浅灰背景
-
+        # canvas = np.full((camera_height, camera_width, 3), (200, 200, 200), dtype=np.uint8)  # 浅灰背景
+        
+        # 创建与控件一样大的背景画布（可改成白色或其他颜色），使用缓存
+        if self.canvas_cache is None or self.canvas_cache.shape[:2] != (camera_height, camera_width):
+            self.canvas_cache = np.full((camera_height, camera_width, 3), (200, 200, 200), dtype=np.uint8)  # 浅灰背景
+        else:
+            self.canvas_cache[:] = (200, 200, 200)  # 重置背景颜色
 
         # 计算居中位置
         x_offset = (camera_width - new_width) // 2
         y_offset = (camera_height - new_height) // 2
 
         # 将缩放后的图像粘贴到画布中心
-        canvas[y_offset:y_offset + new_height, x_offset:x_offset + new_width] = resized_frame
+        self.canvas_cache[y_offset:y_offset + new_height, x_offset:x_offset + new_width] = resized_frame
 
         # 转为 RGB（wx.Bitmap 需要 RGB 顺序）
-        canvas_rgb = cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB)
+        canvas_rgb = cv2.cvtColor(self.canvas_cache, cv2.COLOR_BGR2RGB)
         # 确保数组内存连续，满足 wx.Bitmap 的要求
         canvas_rgb = np.ascontiguousarray(canvas_rgb)
 
