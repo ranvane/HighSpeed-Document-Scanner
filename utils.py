@@ -170,7 +170,7 @@ def save_pdf(frame, path, dpi=300):
 
 
         # 保存为 PDF（第一张图为基准）
-        pil_img.save(path, save_all=True, append_images=pil_img, resolution=dpi)
+        pil_img.save(path, append_images=pil_img, resolution=dpi)
 
         logger.info(f"PDF 文件已成功保存至: {path}")
 

@@ -15,6 +15,30 @@ from config_ui import ConfigFrame  # 这是一个自定义的配置窗口类
 from datetime import datetime
 from utils import save_image,merge_images,save_pdf,save_multip_pdf,get_save_path,SCRFD,measure_time
 
+
+# # ========== 模块追踪代码 ==========
+# import sys
+# import atexit
+#
+# # 记录被导入的模块名
+# _imported = set()
+# _original_import = __import__
+#
+# def custom_import(name, *args, **kwargs):
+#     _imported.add(name)
+#     return _original_import(name, *args, **kwargs)
+#
+# # 替换内建 import 函数（兼容 Python 3）
+# import builtins
+# builtins.__import__ = custom_import
+
+# # 在程序退出时写入文件
+# @atexit.register
+# def show_imports():
+#     with open("used_modules.txt", "w", encoding="utf-8") as f:
+#         for name in sorted(_imported):
+#             f.write(name + "\n")
+
 # 获取当前脚本所在的目录
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -442,6 +466,7 @@ class Main_Frame(Main_Ui_Frame):
                 # 保存图像
                 frame = self.current_captured_frame
                 save_image(frame, path)
+                self.m_statusBar.SetStatusText(f"已保存图片: {path}")
 
                 if self.m_checkBox_saveByGroup.IsChecked():
                     wx.CallAfter(self.m_thumbnailgallery.add_image, path,group_name=self.m_TextCtrl_GroupName.GetValue(),)
@@ -450,6 +475,7 @@ class Main_Frame(Main_Ui_Frame):
             except Exception as e:
                 logger.error(f"on_take_photo 保存图像时出错: {e}")
                 self._show_error(f"保存图像失败: {e}")
+                self.m_statusBar.SetStatusText(f"保存图片失败: {e}")
         else:
             logger.error("on_take_photo 没有捕获到图像")
             return
@@ -476,6 +502,7 @@ class Main_Frame(Main_Ui_Frame):
                 frame = transform_document(self.current_captured_frame)
 
                 save_image(frame, path)
+                self.m_statusBar.SetStatusText(f"已保存图片: {path}")
 
                 if self.m_checkBox_saveByGroup.IsChecked():
                     wx.CallAfter(self.m_thumbnailgallery.add_image, path,group_name=self.m_TextCtrl_GroupName.GetValue(),)
@@ -484,6 +511,7 @@ class Main_Frame(Main_Ui_Frame):
             except Exception as e:
                 logger.error(f"on_take_document 保存图像时出错: {e}")
                 self._show_error(f"保存图像失败: {e}")
+                self.m_statusBar.SetStatusText(f"保存图片失败: {e}")
         else:
             logger.error("on_take_document 没有捕获到图像")
             return
@@ -505,10 +533,12 @@ class Main_Frame(Main_Ui_Frame):
                 # 对图像进行曲面展平处理
                 logger.debug("保存曲面展平处理后的图像为 PDF 文件")
                 frame = transform_document(self.current_captured_frame)
-                save_pdf([frame], path)
+                save_pdf(frame, path)
+                self.m_statusBar.SetStatusText(f"保存PDF文件成功：{path}")
             except Exception as e:
                 logger.error(f"on_take_pdf_doc 保存PDF文件时出错: {e}")
                 self._show_error(f"保存PDF文件失败: {e}")
+                self.m_statusBar.SetStatusText("保存PDF文件失败: {e}")
         else:
             logger.error("on_take_pdf_doc 没有捕获到图像")
             return
@@ -528,9 +558,11 @@ class Main_Frame(Main_Ui_Frame):
 
             images_path=self.m_thumbnailgallery.get_images()
             save_multip_pdf(images_path,path)
+            self.m_statusBar.SetStatusText(f"合并PDF文件成功：{path}")
         except Exception as e:
             logger.error(f"on_take_mutip_pdf_doc 批量合并保存PDF文件时出错: {e}")
             self._show_error('批量合并保存PDF文件时出错!')
+            self.m_statusBar.SetStatusText("合并PDF文件失败: {e}")  
     def on_merge_photos(self, event):
         """
         此方法负责将预览栏中所有图像合并为一个长图片文件。
@@ -549,9 +581,11 @@ class Main_Frame(Main_Ui_Frame):
             images_path=self.m_thumbnailgallery.get_images()
             padding=self.config.get('SCANNER', 'merge_image_interval')
             merge_images(images_path,path,padding=padding)
+            self.m_statusBar.SetStatusText(f"合并图片成功：{path}")
         except Exception as e:
             logger.error(f"on_merge_photos 合并图片时出错: {e}")
             self._show_error('合并图片时出错!')
+            self.m_statusBar.SetStatusText("合并图片失败: {e}")
 
     def on_take_card(self, event):
         """
@@ -588,6 +622,7 @@ class Main_Frame(Main_Ui_Frame):
                         path = get_save_path(suffix="jpg", prefix="卡片")
 
                     save_image(cropped, path)
+                    self.m_statusBar.SetStatusText(f"保存卡片图片成功：{path}")
                     if self.m_checkBox_saveByGroup.IsChecked():
                         wx.CallAfter(self.m_thumbnailgallery.add_image, path, group_name=self.m_TextCtrl_GroupName.GetValue(), )
                     else:
@@ -595,6 +630,7 @@ class Main_Frame(Main_Ui_Frame):
             except Exception as e:
                 logger.error(f"on_take_card 保存卡片图像时出错: {e}")
                 self._show_error(f"保存卡片图像失败: {e}")
+                self.m_statusBar.SetStatusText("保存卡片图片失败: {e}")
         else:
             logger.error("on_take_card 没有捕获到图像")
             return

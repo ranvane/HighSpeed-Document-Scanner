@@ -34,7 +34,7 @@
     <object class="Frame" expanded="true">
       <property name="aui_managed">0</property>
       <property name="aui_manager_style">wxAUI_MGR_DEFAULT</property>
-      <property name="bg"></property>
+      <property name="bg">245, 245, 250</property>
       <property name="center">wxBOTH</property>
       <property name="context_help"></property>
       <property name="context_menu">1</property>
@@ -69,24 +69,24 @@
         <object class="sizeritem" expanded="true">
           <property name="border">5</property>
           <property name="flag">wxEXPAND</property>
-          <property name="proportion">1</property>
-          <object class="wxBoxSizer" expanded="true">
-            <property name="minimum_size"></property>
+          <property name="proportion">0</property>
+          <object class="wxBoxSizer" expanded="false">
+            <property name="minimum_size">1024,1000</property>
             <property name="name">top_Sizer</property>
             <property name="orient">wxHORIZONTAL</property>
             <property name="permission">none</property>
-            <object class="sizeritem" expanded="true">
+            <object class="sizeritem" expanded="false">
               <property name="border">5</property>
-              <property name="flag">wxEXPAND</property>
+              <property name="flag">wxALL|wxEXPAND</property>
               <property name="proportion">5</property>
-              <object class="wxBoxSizer" expanded="true">
-                <property name="minimum_size"></property>
+              <object class="wxBoxSizer" expanded="false">
+                <property name="minimum_size">1024,1000</property>
                 <property name="name">top_left_bSizer</property>
                 <property name="orient">wxVERTICAL</property>
                 <property name="permission">none</property>
                 <object class="sizeritem" expanded="false">
                   <property name="border">5</property>
-                  <property name="flag">wxALL</property>
+                  <property name="flag">wxALL|wxEXPAND</property>
                   <property name="proportion">10</property>
                   <object class="wxStaticBitmap" expanded="false">
                     <property name="BottomDockable">1</property>
@@ -98,7 +98,7 @@
                     <property name="aui_position">0</property>
                     <property name="aui_row">0</property>
                     <property name="best_size"></property>
-                    <property name="bg"></property>
+                    <property name="bg">245, 245, 250</property>
                     <property name="bitmap"></property>
                     <property name="caption"></property>
                     <property name="caption_visible">1</property>
@@ -118,10 +118,10 @@
                     <property name="gripper">0</property>
                     <property name="hidden">0</property>
                     <property name="id">wxID_ANY</property>
-                    <property name="max_size"></property>
+                    <property name="max_size">1920,1080</property>
                     <property name="maximize_button">0</property>
-                    <property name="maximum_size"></property>
-                    <property name="min_size"></property>
+                    <property name="maximum_size">1920,1080</property>
+                    <property name="min_size">1024,768</property>
                     <property name="minimize_button">0</property>
                     <property name="minimum_size">1024,768</property>
                     <property name="moveable">1</property>
@@ -143,18 +143,18 @@
                     <property name="window_style"></property>
                   </object>
                 </object>
-                <object class="sizeritem" expanded="true">
+                <object class="sizeritem" expanded="false">
                   <property name="border">5</property>
                   <property name="flag">wxEXPAND</property>
                   <property name="proportion">0</property>
-                  <object class="wxBoxSizer" expanded="true">
-                    <property name="minimum_size"></property>
+                  <object class="wxBoxSizer" expanded="false">
+                    <property name="minimum_size">1024,50</property>
                     <property name="name">m_item_bSizer</property>
                     <property name="orient">wxHORIZONTAL</property>
                     <property name="permission">none</property>
                     <object class="sizeritem" expanded="false">
                       <property name="border">5</property>
-                      <property name="flag">wxALL</property>
+                      <property name="flag">wxALL|wxEXPAND</property>
                       <property name="proportion">0</property>
                       <object class="wxComboBox" expanded="false">
                         <property name="BottomDockable">1</property>
@@ -166,7 +166,7 @@
                         <property name="aui_position">0</property>
                         <property name="aui_row">0</property>
                         <property name="best_size"></property>
-                        <property name="bg"></property>
+                        <property name="bg">245, 245, 250</property>
                         <property name="caption"></property>
                         <property name="caption_visible">1</property>
                         <property name="center_pane">0</property>
@@ -220,7 +220,7 @@
                     </object>
                     <object class="sizeritem" expanded="false">
                       <property name="border">5</property>
-                      <property name="flag">wxALL</property>
+                      <property name="flag">wxALL|wxEXPAND</property>
                       <property name="proportion">0</property>
                       <object class="wxComboBox" expanded="false">
                         <property name="BottomDockable">1</property>
@@ -232,7 +232,7 @@
                         <property name="aui_position">0</property>
                         <property name="aui_row">0</property>
                         <property name="best_size"></property>
-                        <property name="bg"></property>
+                        <property name="bg">245, 245, 250</property>
                         <property name="caption"></property>
                         <property name="caption_visible">1</property>
                         <property name="center_pane">0</property>
@@ -298,7 +298,7 @@
                         <property name="aui_position">0</property>
                         <property name="aui_row">0</property>
                         <property name="best_size"></property>
-                        <property name="bg"></property>
+                        <property name="bg">245, 245, 250</property>
                         <property name="caption"></property>
                         <property name="caption_visible">1</property>
                         <property name="center_pane">0</property>
@@ -363,7 +363,7 @@
                         <property name="aui_position">0</property>
                         <property name="aui_row">0</property>
                         <property name="best_size"></property>
-                        <property name="bg"></property>
+                        <property name="bg">245, 245, 250</property>
                         <property name="caption"></property>
                         <property name="caption_visible">1</property>
                         <property name="center_pane">0</property>
@@ -415,11 +415,11 @@
                         <event name="OnCheckBox">on_use_webcam</event>
                       </object>
                     </object>
-                    <object class="sizeritem" expanded="true">
+                    <object class="sizeritem" expanded="false">
                       <property name="border">5</property>
                       <property name="flag">wxALL|wxEXPAND</property>
                       <property name="proportion">0</property>
-                      <object class="wxTextCtrl" expanded="true">
+                      <object class="wxTextCtrl" expanded="false">
                         <property name="BottomDockable">1</property>
                         <property name="LeftDockable">1</property>
                         <property name="RightDockable">1</property>
@@ -429,7 +429,7 @@
                         <property name="aui_position">0</property>
                         <property name="aui_row">0</property>
                         <property name="best_size"></property>
-                        <property name="bg"></property>
+                        <property name="bg">245, 245, 250</property>
                         <property name="caption"></property>
                         <property name="caption_visible">1</property>
                         <property name="center_pane">0</property>
@@ -480,11 +480,11 @@
                         <property name="window_style"></property>
                       </object>
                     </object>
-                    <object class="sizeritem" expanded="true">
+                    <object class="sizeritem" expanded="false">
                       <property name="border">5</property>
                       <property name="flag">wxALL|wxEXPAND</property>
                       <property name="proportion">0</property>
-                      <object class="wxCheckBox" expanded="true">
+                      <object class="wxCheckBox" expanded="false">
                         <property name="BottomDockable">1</property>
                         <property name="LeftDockable">1</property>
                         <property name="RightDockable">1</property>
@@ -494,7 +494,7 @@
                         <property name="aui_position">0</property>
                         <property name="aui_row">0</property>
                         <property name="best_size"></property>
-                        <property name="bg"></property>
+                        <property name="bg">245, 245, 250</property>
                         <property name="caption"></property>
                         <property name="caption_visible">1</property>
                         <property name="center_pane">0</property>
@@ -570,7 +570,7 @@
                         <property name="aui_position">0</property>
                         <property name="aui_row">0</property>
                         <property name="best_size"></property>
-                        <property name="bg"></property>
+                        <property name="bg">245, 245, 250</property>
                         <property name="caption"></property>
                         <property name="caption_visible">1</property>
                         <property name="center_pane">0</property>
@@ -635,7 +635,7 @@
                         <property name="aui_position">0</property>
                         <property name="aui_row">0</property>
                         <property name="best_size"></property>
-                        <property name="bg"></property>
+                        <property name="bg">245, 245, 250</property>
                         <property name="caption"></property>
                         <property name="caption_visible">1</property>
                         <property name="center_pane">0</property>
@@ -701,7 +701,7 @@
                         <property name="aui_position">0</property>
                         <property name="aui_row">0</property>
                         <property name="best_size"></property>
-                        <property name="bg"></property>
+                        <property name="bg">245, 245, 250</property>
                         <property name="caption"></property>
                         <property name="caption_visible">1</property>
                         <property name="center_pane">0</property>
@@ -755,7 +755,7 @@
                     </object>
                     <object class="sizeritem" expanded="false">
                       <property name="border">5</property>
-                      <property name="flag">wxALL</property>
+                      <property name="flag">wxALL|wxEXPAND</property>
                       <property name="proportion">0</property>
                       <object class="wxButton" expanded="false">
                         <property name="BottomDockable">1</property>
@@ -768,7 +768,7 @@
                         <property name="aui_row">0</property>
                         <property name="auth_needed">0</property>
                         <property name="best_size"></property>
-                        <property name="bg"></property>
+                        <property name="bg">245, 245, 250</property>
                         <property name="bitmap"></property>
                         <property name="caption"></property>
                         <property name="caption_visible">1</property>
@@ -830,7 +830,7 @@
                     </object>
                     <object class="sizeritem" expanded="false">
                       <property name="border">5</property>
-                      <property name="flag">wxALL</property>
+                      <property name="flag">wxALL|wxEXPAND</property>
                       <property name="proportion">0</property>
                       <object class="wxButton" expanded="false">
                         <property name="BottomDockable">1</property>
@@ -843,7 +843,7 @@
                         <property name="aui_row">0</property>
                         <property name="auth_needed">0</property>
                         <property name="best_size"></property>
-                        <property name="bg"></property>
+                        <property name="bg">245, 245, 250</property>
                         <property name="bitmap"></property>
                         <property name="caption"></property>
                         <property name="caption_visible">1</property>
@@ -909,18 +909,18 @@
             </object>
             <object class="sizeritem" expanded="false">
               <property name="border">5</property>
-              <property name="flag">wxEXPAND</property>
+              <property name="flag">wxALL|wxEXPAND</property>
               <property name="proportion">1</property>
               <object class="wxBoxSizer" expanded="false">
-                <property name="minimum_size"></property>
+                <property name="minimum_size">270,1000</property>
                 <property name="name">top_right_bSizer</property>
                 <property name="orient">wxVERTICAL</property>
                 <property name="permission">none</property>
-                <object class="sizeritem" expanded="true">
+                <object class="sizeritem" expanded="false">
                   <property name="border">5</property>
                   <property name="flag">wxALL|wxEXPAND</property>
                   <property name="proportion">1</property>
-                  <object class="CustomControl" expanded="true">
+                  <object class="CustomControl" expanded="false">
                     <property name="BottomDockable">1</property>
                     <property name="LeftDockable">1</property>
                     <property name="RightDockable">1</property>
@@ -930,7 +930,7 @@
                     <property name="aui_position">0</property>
                     <property name="aui_row">0</property>
                     <property name="best_size"></property>
-                    <property name="bg"></property>
+                    <property name="bg">245, 245, 250</property>
                     <property name="caption"></property>
                     <property name="caption_visible">1</property>
                     <property name="center_pane">0</property>
@@ -958,7 +958,7 @@
                     <property name="maximum_size"></property>
                     <property name="min_size"></property>
                     <property name="minimize_button">0</property>
-                    <property name="minimum_size"></property>
+                    <property name="minimum_size">260,1000</property>
                     <property name="moveable">1</property>
                     <property name="name">m_thumbnailgallery</property>
                     <property name="pane_border">1</property>
@@ -985,10 +985,10 @@
         </object>
         <object class="sizeritem" expanded="false">
           <property name="border">5</property>
-          <property name="flag">wxEXPAND</property>
+          <property name="flag">wxALL|wxEXPAND</property>
           <property name="proportion">0</property>
           <object class="wxBoxSizer" expanded="false">
-            <property name="minimum_size"></property>
+            <property name="minimum_size">1024,80</property>
             <property name="name">bottom_Sizer</property>
             <property name="orient">wxHORIZONTAL</property>
             <property name="permission">none</property>
@@ -1007,7 +1007,7 @@
                 <property name="aui_row">0</property>
                 <property name="auth_needed">0</property>
                 <property name="best_size"></property>
-                <property name="bg"></property>
+                <property name="bg">245, 245, 250</property>
                 <property name="bitmap"></property>
                 <property name="caption"></property>
                 <property name="caption_visible">1</property>
@@ -1082,7 +1082,7 @@
                 <property name="aui_row">0</property>
                 <property name="auth_needed">0</property>
                 <property name="best_size"></property>
-                <property name="bg"></property>
+                <property name="bg">245, 245, 250</property>
                 <property name="bitmap"></property>
                 <property name="caption"></property>
                 <property name="caption_visible">1</property>
@@ -1157,7 +1157,7 @@
                 <property name="aui_row">0</property>
                 <property name="auth_needed">0</property>
                 <property name="best_size"></property>
-                <property name="bg"></property>
+                <property name="bg">245, 245, 250</property>
                 <property name="bitmap"></property>
                 <property name="caption"></property>
                 <property name="caption_visible">1</property>
@@ -1232,7 +1232,7 @@
                 <property name="aui_row">0</property>
                 <property name="auth_needed">0</property>
                 <property name="best_size"></property>
-                <property name="bg"></property>
+                <property name="bg">245, 245, 250</property>
                 <property name="bitmap"></property>
                 <property name="caption"></property>
                 <property name="caption_visible">1</property>
@@ -1307,7 +1307,7 @@
                 <property name="aui_row">0</property>
                 <property name="auth_needed">0</property>
                 <property name="best_size"></property>
-                <property name="bg"></property>
+                <property name="bg">245, 245, 250</property>
                 <property name="bitmap"></property>
                 <property name="caption"></property>
                 <property name="caption_visible">1</property>
@@ -1382,7 +1382,7 @@
                 <property name="aui_row">0</property>
                 <property name="auth_needed">0</property>
                 <property name="best_size"></property>
-                <property name="bg"></property>
+                <property name="bg">245, 245, 250</property>
                 <property name="bitmap"></property>
                 <property name="caption"></property>
                 <property name="caption_visible">1</property>
@@ -1457,7 +1457,7 @@
                 <property name="aui_row">0</property>
                 <property name="auth_needed">0</property>
                 <property name="best_size"></property>
-                <property name="bg"></property>
+                <property name="bg">245, 245, 250</property>
                 <property name="bitmap"></property>
                 <property name="caption"></property>
                 <property name="caption_visible">1</property>
@@ -1542,7 +1542,7 @@
                 <property name="aui_row">0</property>
                 <property name="auth_needed">0</property>
                 <property name="best_size"></property>
-                <property name="bg"></property>
+                <property name="bg">245, 245, 250</property>
                 <property name="bitmap"></property>
                 <property name="caption"></property>
                 <property name="caption_visible">1</property>
@@ -1605,11 +1605,35 @@
           </object>
         </object>
       </object>
+      <object class="wxStatusBar" expanded="true">
+        <property name="bg"></property>
+        <property name="context_help"></property>
+        <property name="context_menu">1</property>
+        <property name="drag_accept_files">0</property>
+        <property name="enabled">1</property>
+        <property name="fg"></property>
+        <property name="fields">1</property>
+        <property name="font"></property>
+        <property name="hidden">0</property>
+        <property name="id">wxID_ANY</property>
+        <property name="maximum_size"></property>
+        <property name="minimum_size">-1,30</property>
+        <property name="name">m_statusBar</property>
+        <property name="permission">protected</property>
+        <property name="pos"></property>
+        <property name="size"></property>
+        <property name="style">wxSTB_SIZEGRIP</property>
+        <property name="subclass">; ; forward_declare</property>
+        <property name="tooltip"></property>
+        <property name="window_extra_style"></property>
+        <property name="window_name"></property>
+        <property name="window_style"></property>
+      </object>
     </object>
     <object class="Dialog" expanded="true">
       <property name="aui_managed">0</property>
       <property name="aui_manager_style">wxAUI_MGR_DEFAULT</property>
-      <property name="bg"></property>
+      <property name="bg">245, 245, 250</property>
       <property name="center">wxBOTH</property>
       <property name="context_help"></property>
       <property name="context_menu">1</property>
@@ -1662,7 +1686,7 @@
                 <property name="aui_position">0</property>
                 <property name="aui_row">0</property>
                 <property name="best_size"></property>
-                <property name="bg"></property>
+                <property name="bg">245, 245, 250</property>
                 <property name="caption"></property>
                 <property name="caption_visible">1</property>
                 <property name="center_pane">0</property>
@@ -1724,7 +1748,7 @@
                 <property name="aui_position">0</property>
                 <property name="aui_row">0</property>
                 <property name="best_size"></property>
-                <property name="bg"></property>
+                <property name="bg">245, 245, 250</property>
                 <property name="caption"></property>
                 <property name="caption_visible">1</property>
                 <property name="center_pane">0</property>
@@ -1790,7 +1814,7 @@
                 <property name="aui_row">0</property>
                 <property name="auth_needed">0</property>
                 <property name="best_size"></property>
-                <property name="bg"></property>
+                <property name="bg">245, 245, 250</property>
                 <property name="bitmap"></property>
                 <property name="caption"></property>
                 <property name="caption_visible">1</property>
@@ -1886,7 +1910,7 @@
                     <property name="aui_position">0</property>
                     <property name="aui_row">0</property>
                     <property name="best_size"></property>
-                    <property name="bg"></property>
+                    <property name="bg">245, 245, 250</property>
                     <property name="caption"></property>
                     <property name="caption_visible">1</property>
                     <property name="center_pane">0</property>
@@ -1951,7 +1975,7 @@
                     <property name="aui_position">0</property>
                     <property name="aui_row">0</property>
                     <property name="best_size"></property>
-                    <property name="bg"></property>
+                    <property name="bg">245, 245, 250</property>
                     <property name="caption"></property>
                     <property name="caption_visible">1</property>
                     <property name="center_pane">0</property>
@@ -2013,7 +2037,7 @@
                     <property name="aui_position">0</property>
                     <property name="aui_row">0</property>
                     <property name="best_size"></property>
-                    <property name="bg"></property>
+                    <property name="bg">245, 245, 250</property>
                     <property name="caption"></property>
                     <property name="caption_visible">1</property>
                     <property name="center_pane">0</property>
@@ -2091,7 +2115,7 @@
                 <property name="aui_position">0</property>
                 <property name="aui_row">0</property>
                 <property name="best_size"></property>
-                <property name="bg"></property>
+                <property name="bg">245, 245, 250</property>
                 <property name="caption"></property>
                 <property name="caption_visible">1</property>
                 <property name="center_pane">0</property>
@@ -2153,7 +2177,7 @@
                 <property name="aui_position">0</property>
                 <property name="aui_row">0</property>
                 <property name="best_size"></property>
-                <property name="bg"></property>
+                <property name="bg">245, 245, 250</property>
                 <property name="caption"></property>
                 <property name="caption_visible">1</property>
                 <property name="center_pane">0</property>
@@ -2219,7 +2243,7 @@
                 <property name="aui_row">0</property>
                 <property name="auth_needed">0</property>
                 <property name="best_size"></property>
-                <property name="bg"></property>
+                <property name="bg">245, 245, 250</property>
                 <property name="bitmap"></property>
                 <property name="caption"></property>
                 <property name="caption_visible">1</property>
@@ -2293,7 +2317,7 @@
                 <property name="aui_row">0</property>
                 <property name="auth_needed">0</property>
                 <property name="best_size"></property>
-                <property name="bg"></property>
+                <property name="bg">245, 245, 250</property>
                 <property name="bitmap"></property>
                 <property name="caption"></property>
                 <property name="caption_visible">1</property>
@@ -2377,7 +2401,7 @@
                 <property name="aui_position">0</property>
                 <property name="aui_row">0</property>
                 <property name="best_size"></property>
-                <property name="bg"></property>
+                <property name="bg">245, 245, 250</property>
                 <property name="caption"></property>
                 <property name="caption_visible">1</property>
                 <property name="center_pane">0</property>
@@ -2439,7 +2463,7 @@
                 <property name="aui_position">0</property>
                 <property name="aui_row">0</property>
                 <property name="best_size"></property>
-                <property name="bg"></property>
+                <property name="bg">245, 245, 250</property>
                 <property name="caption"></property>
                 <property name="caption_visible">1</property>
                 <property name="center_pane">0</property>
@@ -2505,7 +2529,7 @@
                 <property name="aui_row">0</property>
                 <property name="auth_needed">0</property>
                 <property name="best_size"></property>
-                <property name="bg"></property>
+                <property name="bg">245, 245, 250</property>
                 <property name="bitmap"></property>
                 <property name="caption"></property>
                 <property name="caption_visible">1</property>
@@ -2579,7 +2603,7 @@
                 <property name="aui_row">0</property>
                 <property name="auth_needed">0</property>
                 <property name="best_size"></property>
-                <property name="bg"></property>
+                <property name="bg">245, 245, 250</property>
                 <property name="bitmap"></property>
                 <property name="caption"></property>
                 <property name="caption_visible">1</property>
