@@ -705,7 +705,7 @@ class Main_Frame(Main_Ui_Frame):
             logger.debug("禁用分组保存功能")
     def _prepare_display_area(self,debug=True):
         """根据布局设置摄像头显示区域尺寸"""
-        # 获取包含摄像头图像的 sizer
+        # 获取包含摄像头图像控件的 sizer
         sizer = self.m_bitmap_camera.GetContainingSizer()
         if sizer:
             # 如果 sizer 存在，获取其尺寸
@@ -717,23 +717,37 @@ class Main_Frame(Main_Ui_Frame):
             # 将摄像头显示区域的尺寸设置为与 sizer 尺寸一致
             self.camera_resolution = size  # 以 sizer 尺寸为准
     def _release_camera_resources(self):
-        """释放旧摄像头资源与线程"""
+        """
+        释放旧摄像头资源与线程。
+        该方法用于停止摄像头捕获线程并释放摄像头资源，同时处理可能出现的异常，
+        若使用网络摄像头，会在异常时保存网络摄像头的 IP 地址到配置文件。
+        """
         try:
+            # 检查是否存在捕获线程，且线程对象存在，并且线程正在运行
             if hasattr(self, "capture_thread") and self.capture_thread and self.capture_thread.is_alive():
+                # 设置摄像头捕获运行标志为 False，通知线程停止运行
                 self.is_camera_capture_running = False
+                # 等待线程结束，最多等待 1 秒
                 self.capture_thread.join(timeout=1)
+            # 检查是否存在摄像头捕获对象，并且该对象不为 None
             if hasattr(self, "camera_capture") and self.camera_capture is not None:
+                # 释放摄像头资源
                 self.camera_capture.release()
         except Exception as e:
+            # 记录释放摄像头资源失败的错误信息
             logger.error(f"释放摄像头失败: {e}")
-            # 检查是否使用网络摄像头且摄像头可读取
+            # 检查是否使用网络摄像头，并且网络摄像头地址不为空
             if self.use_webcam and self.webcam_url:
-                # 保存网络摄像头 IP 地址到配置文件
+                # 将网络摄像头的 IP 地址保存到配置文件的 CAMERA 部分
                 self.config.set('CAMERA', 'ip_address', self.webcam_url)
+                # 保存配置文件
                 save_config(self.config)
+                # 记录已保存网络摄像头 IP 地址的信息
                 logger.info(f"已保存网络摄像头 IP 地址: {self.webcam_url}")
         except Exception as e:
+            # 记录释放摄像头资源时出现异常的错误信息
             logger.error(f"释放摄像头异常: {e}")
+            # 显示错误提示框，告知用户释放摄像头资源异常
             self._show_error(f"释放摄像头资源异常: {e}")
 
     def _show_error(self, message, title="错误"):
