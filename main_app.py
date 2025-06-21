@@ -32,6 +32,18 @@ class Main_Frame(Main_Ui_Frame):
         根据配置文件选择使用本地摄像头或网络摄像头，并启动相应的摄像头。
         """
         super().__init__(parent=None)
+        
+        # 加载图标
+        try:
+            icon_path = os.path.join(base_dir, "HighSpeed-Document-Scanner.ico")
+            if os.path.exists(icon_path):
+                icon = wx.Icon(icon_path, wx.BITMAP_TYPE_ICO)
+                self.SetIcon(icon)
+            else:
+                logger.error(f"Failed to load icon: {e}")
+        except Exception as e:
+            logger.error(f"Failed to load icon: {e}")
+            
         self.debug = True # 是否开启调试模式
         self.update_frame_debug=False # 是否更新帧调试信息
 
