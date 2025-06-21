@@ -80,6 +80,10 @@ CONFIG_FILE = Path(__file__).parent / "config.ini"
 
 # 默认配置项
 DEFAULT_CONFIG = {
+    'SYSTEM': {
+        'os_type': platform.system(),  # 当前操作系统类型
+        'os_version': platform.version(),  # 当前操作系统版本
+    },
     'PATHS': {
         'save_location': str(save_folder),
         'save_naming_format': '%Y%m%d_%H%M%S',
@@ -109,7 +113,9 @@ PARAM_LABELS = {
     'color_mode': '颜色模式',
     'merge_image_interval': '合并图片间隔距离（单位：px）',
     'use_usb_camera': '是否使用 USB 摄像头',
-    'usb_index': 'USB 摄像头索引'
+    'usb_index': 'USB 摄像头索引',
+    'os_type': '操作系统类型',  # 新增
+    'os_version': '操作系统版本',  # 新增
 }
 
 # option对应的控件类型
@@ -120,6 +126,8 @@ OPTION_CONTROLS = {
     'dpi': 'text',
     'merge_image_interval': 'text',
     'usb_index': 'text',
+    'os_type': 'text',  # 新增
+    'os_version': 'text',  # 新增
     # 可以继续补充
 }
 
@@ -228,7 +236,38 @@ def save_config(config, section=None, option=None, value=None):
     # 记录信息日志，提示配置已保存到指定文件
     logger.info(f"Config saved to {CONFIG_FILE}")
 
+def update_os_and_save_path():
+    """
+    检测当前操作系统，若与配置文件中的不同，则更新操作系统信息和默认保存路径。
+    """
+    current_os = platform.system()
+    config = get_config()
 
+    # 检查是否存在 SYSTEM 节，不存在则添加
+    if not config.has_section('SYSTEM'):
+        config.add_section('SYSTEM')
+
+    # 获取配置文件中的操作系统信息
+    saved_os = config.get('SYSTEM', 'os_type', fallback=None)
+
+    if saved_os != current_os:
+        # 更新操作系统信息
+        config.set('SYSTEM', 'os_type', current_os)
+        logger.info(f"操作系统已更新为 {current_os}")
+
+        # 获取系统图片文件夹路径作为新的默认保存路径
+        new_save_path = get_pictures_folder()
+
+        # 检查是否存在 PATHS 节，不存在则添加
+        if not config.has_section('PATHS'):
+            config.add_section('PATHS')
+
+        # 更新默认保存路径
+        config.set('PATHS', 'save_location', new_save_path)
+        logger.info(f"默认保存路径已更新为 {new_save_path}")
+
+        # 保存配置
+        save_config(config)
 
 if __name__ == "__main__":
     # 重置配置为默认值（含中文映射）

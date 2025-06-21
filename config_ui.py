@@ -5,7 +5,7 @@ import os
 
 class ConfigFrame(wx.Frame):
     def __init__(self, parent=None, title="参数设置"):
-        super().__init__(parent, title=title, size=(650, 590))
+        super().__init__(parent, title=title, size=(650, 670))
         self.SetBackgroundColour(wx.Colour(250, 250, 250))
 
         self.config = app_config.get_config()

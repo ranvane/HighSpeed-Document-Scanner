@@ -9,35 +9,12 @@ from Document_Scanner_UI import Main_Ui_Frame
 # 从自定义摄像头工具模块中导入使用的函数
 from cammer_utils import get_camera_resolution, get_camera, rotate_frame, count_cameras, detect_contour, get_camera_supported_resolutions, draw_boxes_on_image, transform_document
 from loguru import logger
-from app_config import get_config, save_config
+from app_config import get_config, save_config,update_os_and_save_path
 # 从自定义配置界面模块中导入配置窗口类
 from config_ui import ConfigFrame  # 这是一个自定义的配置窗口类
 from datetime import datetime
 from utils import save_image,merge_images,save_pdf,save_multip_pdf,get_save_path,SCRFD,measure_time
 
-
-# # ========== 模块追踪代码 ==========
-# import sys
-# import atexit
-#
-# # 记录被导入的模块名
-# _imported = set()
-# _original_import = __import__
-#
-# def custom_import(name, *args, **kwargs):
-#     _imported.add(name)
-#     return _original_import(name, *args, **kwargs)
-#
-# # 替换内建 import 函数（兼容 Python 3）
-# import builtins
-# builtins.__import__ = custom_import
-
-# # 在程序退出时写入文件
-# @atexit.register
-# def show_imports():
-#     with open("used_modules.txt", "w", encoding="utf-8") as f:
-#         for name in sorted(_imported):
-#             f.write(name + "\n")
 
 # 获取当前脚本所在的目录
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -93,6 +70,7 @@ class Main_Frame(Main_Ui_Frame):
         self.config = get_config()
         # 缩略图最大尺寸
         self.thumb_max_size=(256, 256)
+        update_os_and_save_path()# 根据系统更新操作系统、默认保存路径信息
 
         # 定义 ONNX 模型文件的路径
         onnxmodel = 'models/cv_resnet18_card_correction.onnx'
@@ -107,6 +85,7 @@ class Main_Frame(Main_Ui_Frame):
             self.switch_to_local_camera()
         else:
             self.switch_to_web_camera()
+    
     def clear_camera_bitmap(self):
         """
         清空 m_bitmap_camera 显示的图像
