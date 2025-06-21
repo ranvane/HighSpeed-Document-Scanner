@@ -32,6 +32,8 @@ class Main_Frame(Main_Ui_Frame):
         根据配置文件选择使用本地摄像头或网络摄像头，并启动相应的摄像头。
         """
         super().__init__(parent=None)
+        self.debug = True # 是否开启调试模式
+        self.update_frame_debug=False # 是否更新帧调试信息
 
         # 摄像头索引，初始化为 -1
         self.local_camera_index = -1
@@ -277,13 +279,14 @@ class Main_Frame(Main_Ui_Frame):
 
         # 启动采集线程
         try:
-            self._prepare_display_area()
+            
+            self._prepare_display_area(debug=self.debug)
             self.is_camera_capture_running = True
 
             frame_interval_ms = 1000 / self.fps  # ✅ 推荐这样传参清晰
             self.capture_thread = threading.Thread(
                 target=self.update_frame,
-                args=(frame_interval_ms,),
+                args=(frame_interval_ms,self.update_frame_debug),
                 daemon=True
             )
             self.capture_thread.start()
@@ -294,8 +297,8 @@ class Main_Frame(Main_Ui_Frame):
             self._show_error(str(e))
             self._release_camera_resources()
 
-    @measure_time
-    def update_frame(self, target_fps=30):
+
+    def update_frame(self, target_fps=30,debug=False):
         """
         更新摄像头帧的线程方法。
 
@@ -318,36 +321,30 @@ class Main_Frame(Main_Ui_Frame):
                 # 复制旋转后的图像帧，作为当前捕获的图像帧
                 self.current_captured_frame = frame.copy()
                 # 根据设置的旋转角度对图像进行旋转
-                frame = rotate_frame(self.current_captured_frame, self.image_rotation)
+                self.current_captured_frame = rotate_frame(self.current_captured_frame, self.image_rotation)
 
-                # 如果启用了曲面展平功能
-                if self.is_surface_rectification_enabled:
-                    # 对图像进行曲面展平处理
-                    frame = transform_document(frame)
+                # # 如果启用了曲面展平功能
+                # if self.is_surface_rectification_enabled:
+                #     # 对图像进行曲面展平处理
+                #     self.current_captured_frame = transform_document(self.current_captured_frame)
                 # 如果启用了方框检测功能
-                elif self.is_document_outline_detection_enabled:
+                if self.is_document_outline_detection_enabled:
                     # 检测图像中的轮廓，_contour 为检测到的轮廓，frame 为处理后的图像
-                    _contour, frame = detect_contour(frame)
+                    _contour, self.current_captured_frame = detect_contour(self.current_captured_frame)
                     if _contour is not None:  # 如果检测到轮廓
                         # 在图像上绘制方框
-                        frame = draw_boxes_on_image(frame, _contour)
+                        self.current_captured_frame = draw_boxes_on_image(self.current_captured_frame, _contour)
                     else:
                         logger.debug("未检测到轮廓")
-
-                # 将图像颜色空间从 BGR 转换为 RGB，以适应 wxPython 的显示要求
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                # 确保数组在内存中是连续存储的，提升性能
-                frame = np.ascontiguousarray(frame)
-                # 获取图像的高度和宽度
-                h, w = frame.shape[:2]
-                # 从 NumPy 数组创建 wx.Bitmap 对象，用于后续在界面上显示
-                self.bitmap = wx.Bitmap.FromBuffer(w, h, frame)
 
                 # 异步调用 update_bitmap 方法，确保在主线程中更新 UI
                 wx.CallAfter(self.update_bitmap)
 
             # 计算从开始读取帧到当前的处理耗时
             elapsed = time.time() - start_time
+            if debug:
+                logger.debug(f"处理一帧图像耗时: {elapsed:.4f} 秒")
+                logger.debug(f"读取到的图像尺寸: {frame.shape}")
             # 计算需要休眠的时间，确保帧率稳定，若为负数则取 0
             sleep_time = max(0, frame_interval_sec - elapsed)
             # 线程休眠相应时间，维持固定帧率
@@ -355,24 +352,21 @@ class Main_Frame(Main_Ui_Frame):
 
     def update_bitmap(self):
         """
-        更新显示的位图。
-        此方法负责将捕获的图像调整大小以适应显示窗口，并更新显示的位图。
-        如果捕获的图像存在，则获取显示窗口的大小，并根据图像的宽高比调整图像大小，
-        以适应显示窗口。然后将调整后的图像设置为显示窗口的位图，并刷新窗口以显示新的图像。
+        更新显示的位图（优化版）。
+        使用 OpenCV 缩放图像后直接生成 wx.Bitmap，避免 ConvertToImage 和 Rescale 的开销。
         """
-        if hasattr(self, "bitmap"):
-            # 获取 m_bitmap_camera 的大小
+        if hasattr(self, "current_captured_frame"):
+            # 获取控件大小
             camera_size = self.m_bitmap_camera.GetSize()
             camera_width = camera_size.GetWidth()
             camera_height = camera_size.GetHeight()
 
-            # 获取 bitmap 的原始大小
-            image = self.bitmap.ConvertToImage()
-            bitmap_width = image.GetWidth()
-            bitmap_height = image.GetHeight()
+            # 原始图像尺寸
+            frame = self.current_captured_frame
+            h, w = frame.shape[:2]
+            aspect_ratio = w / h
 
-            # 计算调整后的大小，保持比例
-            aspect_ratio = bitmap_width / bitmap_height
+            # 计算目标尺寸，保持宽高比
             if camera_width / camera_height > aspect_ratio:
                 new_height = camera_height
                 new_width = int(camera_height * aspect_ratio)
@@ -380,14 +374,22 @@ class Main_Frame(Main_Ui_Frame):
                 new_width = camera_width
                 new_height = int(camera_width / aspect_ratio)
 
-            # 调整 bitmap 的大小以适应 m_bitmap_camera
-            image = image.Scale(new_width, new_height, wx.IMAGE_QUALITY_HIGH)
-            self.bitmap = wx.Bitmap(image)
+            # 用 OpenCV 缩放图像（线性插值已很平滑）
+            resized_frame = cv2.resize(frame, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
 
-            # 设置调整后的 bitmap 到 m_bitmap_camera
+            # 转换颜色空间 BGR -> RGB，满足 wx.Bitmap.FromBuffer 的要求
+            resized_frame_rgb = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
+
+            # 确保内存连续性
+            resized_frame_rgb = np.ascontiguousarray(resized_frame_rgb)
+
+            # 创建 wx.Bitmap
+            self.bitmap = wx.Bitmap.FromBuffer(new_width, new_height, resized_frame_rgb)
+
+            # 更新界面
             self.m_bitmap_camera.SetBitmap(self.bitmap)
-            # 刷新窗口
-            self.Refresh()
+            self.m_bitmap_camera.Refresh()
+
 
     def on_document_outline_detection(self, event):
         """
@@ -658,13 +660,15 @@ class Main_Frame(Main_Ui_Frame):
             # 如果复选框未被选中，则分组名称输入框不可输入文本
             self.m_TextCtrl_GroupName.Enable(False)
             logger.debug("禁用分组保存功能")
-    def _prepare_display_area(self):
+    def _prepare_display_area(self,debug=True):
         """根据布局设置摄像头显示区域尺寸"""
         # 获取包含摄像头图像的 sizer
         sizer = self.m_bitmap_camera.GetContainingSizer()
         if sizer:
             # 如果 sizer 存在，获取其尺寸
             size = sizer.GetSize()
+            if debug:
+                logger.debug(f"摄像头图像的 size: {size}")
             # 设置摄像头图像控件的尺寸为 sizer 的尺寸
             self.m_bitmap_camera.SetSize(size)
             # 将摄像头显示区域的尺寸设置为与 sizer 尺寸一致

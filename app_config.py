@@ -159,6 +159,7 @@ def reset_config_to_default():
 
     # 记录信息日志，提示配置文件已重置为默认设置
     logger.info("配置文件已重置为默认设置，包含参数中文名映射。")
+    update_os_and_save_path()
 
 
 def get_config():
