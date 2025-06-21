@@ -307,6 +307,8 @@ class Main_Frame(Main_Ui_Frame):
         """
         # 计算每帧之间的时间间隔（秒）
         frame_interval_sec = 1.0 / target_fps
+        
+        last_processed_frame = None
 
         # 当摄像头正常打开且捕获线程运行标志为 True 时，持续循环
         while self.camera_capture.isOpened() and self.is_camera_capture_running:
@@ -319,26 +321,29 @@ class Main_Frame(Main_Ui_Frame):
             if ret:  # 如果成功读取到图像帧
 
                 # 复制旋转后的图像帧，作为当前捕获的图像帧
-                self.current_captured_frame = frame.copy()
+                _frame = frame.copy()
                 # 根据设置的旋转角度对图像进行旋转
-                self.current_captured_frame = rotate_frame(self.current_captured_frame, self.image_rotation)
+                _frame = rotate_frame(_frame, self.image_rotation)
 
                 # # 如果启用了曲面展平功能
-                # if self.is_surface_rectification_enabled:
-                #     # 对图像进行曲面展平处理
-                #     self.current_captured_frame = transform_document(self.current_captured_frame)
+                if self.is_surface_rectification_enabled:
+                    # 对图像进行曲面展平处理
+                    _frame = transform_document(_frame)
                 # 如果启用了方框检测功能
-                if self.is_document_outline_detection_enabled:
+                elif self.is_document_outline_detection_enabled:
                     # 检测图像中的轮廓，_contour 为检测到的轮廓，frame 为处理后的图像
-                    _contour, self.current_captured_frame = detect_contour(self.current_captured_frame)
+                    _contour, _frame = detect_contour(_frame)
                     if _contour is not None:  # 如果检测到轮廓
                         # 在图像上绘制方框
-                        self.current_captured_frame = draw_boxes_on_image(self.current_captured_frame, _contour)
+                        _frame = draw_boxes_on_image(_frame, _contour)
                     else:
                         logger.debug("未检测到轮廓")
-
-                # 异步调用 update_bitmap 方法，确保在主线程中更新 UI
-                wx.CallAfter(self.update_bitmap)
+                # 减少不必要的 UI 更新
+                if last_processed_frame is None or not np.array_equal(_frame, last_processed_frame):
+                    
+                    last_processed_frame = _frame
+                    # 异步调用 update_bitmap 方法，确保在主线程中更新 UI
+                    wx.CallAfter(self.update_bitmap, _frame)
 
             # 计算从开始读取帧到当前的处理耗时
             elapsed = time.time() - start_time
@@ -350,46 +355,70 @@ class Main_Frame(Main_Ui_Frame):
             # 线程休眠相应时间，维持固定帧率
             time.sleep(sleep_time)
 
-    def update_bitmap(self):
+    def update_bitmap(self, frame):
         """
-        更新显示的位图（优化版）。
-        使用 OpenCV 缩放图像后直接生成 wx.Bitmap，避免 ConvertToImage 和 Rescale 的开销。
+        更新显示的位图（居中缩放版）。
+        将 frame 等比缩放并居中绘制在与显示控件尺寸一致的画布上，然后显示。
+        特点：
+            图像等比缩放，无拉伸、不变形；
+            居中显示，无论控件多大；
+            不使用 wx.Image 转换，提高性能；
+            背景为黑色，可改白色（用 np.full(..., 255, ...)）或自定义颜色。
         """
-        if hasattr(self, "current_captured_frame"):
-            # 获取控件大小
-            camera_size = self.m_bitmap_camera.GetSize()
-            camera_width = camera_size.GetWidth()
-            camera_height = camera_size.GetHeight()
+        if not hasattr(self, "m_bitmap_camera"):
+            return
 
-            # 原始图像尺寸
-            frame = self.current_captured_frame
-            h, w = frame.shape[:2]
-            aspect_ratio = w / h
+        # 获取控件大小
+        camera_size = self.m_bitmap_camera.GetSize()
+        camera_width = camera_size.GetWidth()
+        camera_height = camera_size.GetHeight()
 
-            # 计算目标尺寸，保持宽高比
-            if camera_width / camera_height > aspect_ratio:
-                new_height = camera_height
-                new_width = int(camera_height * aspect_ratio)
-            else:
-                new_width = camera_width
-                new_height = int(camera_width / aspect_ratio)
+        # 原始图像尺寸
+        h, w = frame.shape[:2]
+        aspect_ratio = w / h
 
-            # 用 OpenCV 缩放图像（线性插值已很平滑）
-            resized_frame = cv2.resize(frame, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
+        # 计算缩放后的尺寸（保持宽高比）
+        if camera_width / camera_height > aspect_ratio:
+            # 控件的宽高比大于图像的宽高比，高度填满控件
+            new_height = camera_height
+            # 根据高度计算缩放后的宽度
+            new_width = int(camera_height * aspect_ratio)
+        else:
+            # 控件的宽高比小于等于图像的宽高比，宽度填满控件
+            new_width = camera_width
+            # 根据宽度计算缩放后的高度
+            new_height = int(camera_width / aspect_ratio)
 
-            # 转换颜色空间 BGR -> RGB，满足 wx.Bitmap.FromBuffer 的要求
-            resized_frame_rgb = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
+        # 缩放图像
+        resized_frame = cv2.resize(frame, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
 
-            # 确保内存连续性
-            resized_frame_rgb = np.ascontiguousarray(resized_frame_rgb)
+        # 创建与控件一样大的背景画布（可改成白色或其他颜色）
+        # canvas = np.zeros((camera_height, camera_width, 3), dtype=np.uint8) # 白色背景
+        canvas = np.full((camera_height, camera_width, 3), (200, 200, 200), dtype=np.uint8)  # 浅灰背景
 
-            # 创建 wx.Bitmap
-            self.bitmap = wx.Bitmap.FromBuffer(new_width, new_height, resized_frame_rgb)
 
-            # 更新界面
-            self.m_bitmap_camera.SetBitmap(self.bitmap)
-            self.m_bitmap_camera.Refresh()
+        # 计算居中位置
+        x_offset = (camera_width - new_width) // 2
+        y_offset = (camera_height - new_height) // 2
 
+        # 将缩放后的图像粘贴到画布中心
+        canvas[y_offset:y_offset + new_height, x_offset:x_offset + new_width] = resized_frame
+
+        # 转为 RGB（wx.Bitmap 需要 RGB 顺序）
+        canvas_rgb = cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB)
+        # 确保数组内存连续，满足 wx.Bitmap 的要求
+        canvas_rgb = np.ascontiguousarray(canvas_rgb)
+
+        # 创建 wx.Bitmap 并显示
+        self.bitmap = wx.Bitmap.FromBuffer(camera_width, camera_height, canvas_rgb)
+        self.m_bitmap_camera.SetBitmap(self.bitmap)
+        # self.m_bitmap_camera.Refresh()
+        # 获取包含摄像头图像的 sizer
+        sizer = self.m_bitmap_camera.GetContainingSizer()
+        # 刷新 sizer，确保显示最新的位图
+        sizer.Layout()
+        # 刷新整个对话框，确保所有组件都得到正确显示
+        self.Refresh()
 
     def on_document_outline_detection(self, event):
         """
@@ -403,6 +432,10 @@ class Main_Frame(Main_Ui_Frame):
             # 如果当前未启用方框检测，则启用它并更新复选框状态
             self.m_checkBox_detect_squares.SetValue(True)
             self.is_document_outline_detection_enabled = True
+            # 禁用曲面展平功能
+            self.is_surface_rectification_enabled = False
+            self.m_checkBox_rectify_surface.SetValue(False)
+            
         else:
             # 如果当前已启用方框检测，则禁用它并更新复选框状态
             self.m_checkBox_detect_squares.SetValue(False)
@@ -421,6 +454,9 @@ class Main_Frame(Main_Ui_Frame):
             # 如果当前未启用曲面展平，则启用它并更新复选框状态
             self.m_checkBox_rectify_surface.SetValue(True)
             self.is_surface_rectification_enabled = True
+            # 禁用方框检测功能
+            self.m_checkBox_detect_squares.SetValue(False)
+            self.is_document_outline_detection_enabled = False
         else:
             # 如果当前已启用曲面展平，则禁用它并更新复选框状态
             self.m_checkBox_rectify_surface.SetValue(False)

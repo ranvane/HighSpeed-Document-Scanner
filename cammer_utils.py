@@ -302,7 +302,7 @@ def detect_edges(blurred):
         edges = cv2.Canny(blurred, lower, upper)
 
         # 定义一个 3x3 的结构元素，用于形态学膨胀操作
-        kernel = np.ones((3, 3), np.uint8)
+        kernel = np.ones((5, 5), np.uint8)
         # 对边缘图像进行形态学膨胀操作，连接断开的边缘
         dilated_edges = cv2.dilate(edges, kernel, iterations=1)
         return dilated_edges
@@ -347,7 +347,8 @@ def find_document_contour(edges, original_img):
         # 初始化文档轮廓为 None，表示尚未找到合适的轮廓
         document_contour = None
         # 复制原始图像，避免在原始图像上直接操作
-        img_with_contours = original_img.copy()
+        # img_with_contours = original_img.copy()
+        img_with_contours = original_img
 
         # 自适应计算面积阈值，根据图像大小调整
         # 获取原始图像的高度和宽度
@@ -410,7 +411,7 @@ def draw_boxes_on_image(frame, boxes, color=(0, 255, 0), thickness=5):
             logger.error("thickness 必须是正整数")
             return frame
 
-        img_with_boxes = frame.copy()
+        # img_with_boxes = frame.copy()
         for box in boxes:
             # 检查每个方框是否为有效的 numpy 数组
             if not isinstance(box, np.ndarray):
@@ -418,9 +419,9 @@ def draw_boxes_on_image(frame, boxes, color=(0, 255, 0), thickness=5):
             if box.ndim != 2 or box.shape[1] != 2:
                 logger.error("每个方框必须是二维数组，且第二维长度为 2")
                 return frame
-            cv2.drawContours(img_with_boxes, [box], -1, color, thickness)
+            cv2.drawContours(frame, [box], -1, color, thickness)
 
-        return img_with_boxes
+        return frame
     except Exception as e:
         logger.error(f"在图像上绘制方框时出错: {e}")
         return frame
