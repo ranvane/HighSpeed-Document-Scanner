@@ -40,7 +40,7 @@ class Main_Frame(Main_Ui_Frame):
                 icon = wx.Icon(icon_path, wx.BITMAP_TYPE_ICO)
                 self.SetIcon(icon)
             else:
-                logger.error(f"Failed to load icon: {e}")
+                logger.error(f"Failed to load icon.")
         except Exception as e:
             logger.error(f"Failed to load icon: {e}")
             
