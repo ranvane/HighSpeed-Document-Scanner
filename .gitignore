@@ -189,3 +189,4 @@ dist/
 *.spec
 /testimages
 /Picture
+out/
