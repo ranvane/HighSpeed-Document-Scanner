@@ -1,5 +1,6 @@
 import wx
 import os
+import sys
 import platform
 import cv2
 import numpy as np
@@ -19,48 +20,63 @@ def measure_time(func):
         return result
     return wrapper
 
-def load_icon(base_dir, name):
+
+def resource_path(relative_path):
     """
-    跨平台设置应用图标
-
-    参数:
-        base_dir (str): 图标文件所在的基础目录
-        name (str): 图标文件的名称（不包含扩展名）
-
-    返回:
-        wx.Icon: 成功加载则返回图标对象，失败则返回 None
+    获取资源文件的绝对路径，兼容开发环境和Nuitka/ PyInstaller打包后。
+    :param relative_path: 相对路径
+    :return: 绝对路径
     """
     try:
-        system = platform.system()
-        icon = None
+        # Nuitka onefile 模式下
+        if getattr(sys, 'frozen', False):
+            base_path = sys._MEIPASS if hasattr(sys, "_MEIPASS") else os.path.dirname(sys.executable)
+        else:
+            base_path = os.path.dirname(os.path.abspath(__file__))
+    except Exception:
+        base_path = os.path.dirname(os.path.abspath(__file__))
 
+    return os.path.join(base_path, relative_path)
+
+def load_icon(name):
+    """
+    跨平台加载图标
+    :param name: 图标文件名称（不包含扩展名）
+    :return: wx.Icon
+    """
+    import platform
+
+    icon = None
+    system = platform.system()
+
+    try:
         if system == "Windows":
-            ico_path = os.path.join(base_dir, f"{name}.ico")
+            ico_path = resource_path(f"{name}.ico")
             if os.path.exists(ico_path):
                 icon = wx.Icon(ico_path, wx.BITMAP_TYPE_ICO)
             else:
-                logger.warning(f"ICO icon 文件不存在: {ico_path}")
+                logger.warning(f"ICO 图标文件不存在: {ico_path}")
         else:
-            png_path = os.path.join(base_dir, f"{name}.png")
+            png_path = resource_path(f"{name}.png")
             if os.path.exists(png_path):
                 image = wx.Image(png_path, wx.BITMAP_TYPE_PNG)
                 if image.IsOk():
-                    # 防止EXIF引起的问题
                     image = image.Scale(image.GetWidth(), image.GetHeight(), wx.IMAGE_QUALITY_HIGH)
                     icon = wx.Icon(image.ConvertToBitmap())
             else:
-                logger.warning(f"PNG icon 文件不存在: {png_path}")
+                logger.warning(f"PNG 图标文件不存在: {png_path}")
 
         if icon and icon.IsOk():
-            logger.info("图标对象加载成功.")
+            logger.info("图标加载成功")
             return icon
         else:
-            logger.error("图标对象不存在或无效.")
+            logger.error("图标加载失败")
             return None
 
     except Exception as e:
-        logger.error(f"加载图标失败: {e}")
+        logger.error(f"加载图标异常: {e}")
         return None
+
 
 
 def get_save_path(suffix="jpg",group_name=None,prefix=None):

@@ -13,7 +13,7 @@ from app_config import get_config, save_config,update_os_and_save_path
 # 从自定义配置界面模块中导入配置窗口类
 from config_ui import ConfigFrame  # 这是一个自定义的配置窗口类
 from datetime import datetime
-from utils import save_image,merge_images,save_pdf,save_multip_pdf,get_save_path,SCRFD,measure_time,load_icon
+from utils import save_image,merge_images,save_pdf,save_multip_pdf,get_save_path,SCRFD,measure_time,load_icon,resource_path
 
 
 # 获取当前脚本所在的目录
@@ -34,7 +34,7 @@ class Main_Frame(Main_Ui_Frame):
         super().__init__(parent=None)
         
         # 加载图标
-        icon = load_icon(base_dir,"HighSpeed-Document-Scanner")
+        icon = load_icon("HighSpeed-Document-Scanner")
         if icon:
             self.SetIcon(icon)
             
@@ -83,7 +83,8 @@ class Main_Frame(Main_Ui_Frame):
         update_os_and_save_path()# 根据系统更新操作系统、默认保存路径信息
 
         # 定义 ONNX 模型文件的路径
-        onnxmodel = 'models/cv_resnet18_card_correction.onnx'
+        # onnxmodel = 'models/cv_resnet18_card_correction.onnx'
+        onnxmodel = resource_path('models/cv_resnet18_card_correction.onnx')# 使用资源路径获取模型文件路径
         # 创建 SCRFD 类的实例，传入 ONNX 模型路径、置信度阈值和 NMS 阈值
         self.card_net = SCRFD(onnxmodel)
 
