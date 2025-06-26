@@ -2,7 +2,45 @@ import cv2
 import time
 import numpy as np
 from loguru import logger
+import threading
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 
+def open_capture(source, timeout=3):
+    """
+    在指定超时时间内尝试打开视频流（支持本地摄像头和网络摄像头）。
+    
+    参数:
+        source: 摄像头索引（int）或 URL（str）
+        timeout: 超时时间（秒）
+    
+    返回:
+        cap: 成功返回 cv2.VideoCapture 对象，否则返回 None
+    """
+    result = []
+
+    def target():
+        cap = cv2.VideoCapture(source)
+        result.append(cap)
+
+    thread = threading.Thread(target=target)
+    thread.start()
+    thread.join(timeout)
+
+    if thread.is_alive():
+        print(f"打开视频源超时（超过 {timeout} 秒）")
+        return None
+
+    if result:
+        cap = result[0]
+        if cap.isOpened():
+            print("视频源打开成功")
+            return cap
+        else:
+            print("视频源打开失败")
+            return None
+    else:
+        print("未知错误：线程未返回结果")
+        return None
 
 def rotate_frame(image, frame_rotation):
     """
@@ -151,22 +189,46 @@ def count_cameras(max_tested=10):
     return count
 
 
-def get_camera(index=0):
-    '''
-    获取指定摄像头的视频捕获对象
-    :param index: 摄像头索引，默认为0
-    :return: 视频捕获对象
-    '''
-    try:
-        cap = cv2.VideoCapture(index)
-        if not cap.isOpened():
-            logger.error(f"无法打开摄像头 {index}")
-            return None
-        return cap
-    except Exception as e:
-        logger.error(f"获取摄像头 {index} 时出错: {e}")
-        return None
 
+def get_camera(source, timeout=3, fps=30):
+    """
+    在指定超时时间内尝试打开视频流，并设置帧率。
+
+    参数:
+        source: 摄像头索引（int）或 URL（str）
+        timeout: 超时时间（秒）
+        fps: 打开摄像头后设置的帧率（默认30）
+
+    返回:
+        cap: 成功返回 cv2.VideoCapture 对象，否则返回 None
+    """
+    def open_camera():
+        cap = cv2.VideoCapture(source)
+        if cap.isOpened():
+            # 尝试设置帧率
+            if fps is not None:
+                cap.set(cv2.CAP_PROP_FPS, fps)
+                # 验证是否设置成功
+                actual_fps = cap.get(cv2.CAP_PROP_FPS)
+                print(f"目标帧率: {fps}, 实际帧率: {actual_fps}")
+            return cap
+        else:
+            cap.release()
+            return None
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(open_camera)
+        try:
+            cap = future.result(timeout=timeout)
+            if cap is not None:
+                print("视频源打开成功")
+                return cap
+            else:
+                print("视频源打开失败")
+                return None
+        except TimeoutError:
+            print(f"打开视频源超时（超过 {timeout} 秒）")
+            return None
 
 def get_camera_supported_resolutions(cap, max_width=1920, max_height=1080):
     """
@@ -615,9 +677,9 @@ def transform_document(frame):
 
 if __name__ == "__main__":
     # print(count_cameras())
-    capture = get_camera(0)
+    capture = open_capture(0)
     # set_camera_resolution(capture,1920, 1440)
 
-    set_camera_resolution(capture, 1920, 1080)
-    capture.release()
-    print(get_camera_resolution())
+    # set_camera_resolution(capture, 1920, 1080)
+    # # capture.release()
+    # print(get_camera_resolution())

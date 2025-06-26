@@ -13,7 +13,7 @@ from app_config import get_config, save_config,update_os_and_save_path
 # 从自定义配置界面模块中导入配置窗口类
 from config_ui import ConfigFrame  # 这是一个自定义的配置窗口类
 from datetime import datetime
-from utils import save_image,merge_images,save_pdf,save_multip_pdf,get_save_path,SCRFD,measure_time
+from utils import save_image,merge_images,save_pdf,save_multip_pdf,get_save_path,SCRFD,measure_time,load_icon
 
 
 # 获取当前脚本所在的目录
@@ -34,15 +34,9 @@ class Main_Frame(Main_Ui_Frame):
         super().__init__(parent=None)
         
         # 加载图标
-        try:
-            icon_path = os.path.join(base_dir, "HighSpeed-Document-Scanner.ico")
-            if os.path.exists(icon_path):
-                icon = wx.Icon(icon_path, wx.BITMAP_TYPE_ICO)
-                self.SetIcon(icon)
-            else:
-                logger.error(f"Failed to load icon.")
-        except Exception as e:
-            logger.error(f"Failed to load icon: {e}")
+        icon = load_icon(base_dir,"HighSpeed-Document-Scanner")
+        if icon:
+            self.SetIcon(icon)
             
         self.debug = True # 是否开启调试模式
         self.update_frame_debug=False # 是否更新帧调试信息
@@ -193,7 +187,7 @@ class Main_Frame(Main_Ui_Frame):
             try:
                 logger.info(f"尝试连接网络摄像头: {self.webcam_url}")
                 # 尝试连接网络摄像头
-                capture = cv2.VideoCapture(self.webcam_url)
+                capture = get_camera(self.webcam_url)
                 if capture.isOpened():
                     self.camera_capture = capture
                 else:
