@@ -124,10 +124,10 @@ def save_image(frame, path):
     """
     try:
         # 将 BGR 格式的 OpenCV 图像转换为 RGB 格式
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        # rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         # 创建 wx.Image 对象
-        image = wx.Image(rgb_frame.shape[1], rgb_frame.shape[0])
-        image.SetData(rgb_frame.tobytes())
+        image = wx.Image(frame.shape[1], frame.shape[0])
+        image.SetData(frame.tobytes())
         # 保存图像到指定路径
         logger.info(f"保存图像: {path}")
         image.SaveFile(path, wx.BITMAP_TYPE_JPEG)
@@ -403,9 +403,12 @@ class SCRFD():
         :param srcimg: 输入的原始图像
         :return: 包含绘制后的图片和检测目标四个角点坐标列表的列表，格式为 [outimg, corner_points_list]
         """
+        
         # 调整输入图像的大小，并获取调整后的图像信息和填充量
         img, newh, neww, padh, padw = self.resize_image(srcimg)
         # 将调整后的图像转换为适合网络输入的 blob 格式
+        # blob 是一个常见术语。blob 是 “Binary Large Object” 的缩写，
+        # blob指的是二进制大对象，在深度学习中，它通常代表经过特定处理、适合神经网络输入的多维数组。
         blob = cv2.dnn.blobFromImage(img, 1.0 / 128, (self.inpWidth, self.inpHeight), (127.5, 127.5, 127.5),
                                      swapRB=True)
         # 将 blob 数据设置为网络的输入
@@ -413,6 +416,7 @@ class SCRFD():
 
         # 执行前向传播，获取网络输出层的输出结果
         outs = self.net.forward(self.net.getUnconnectedOutLayersNames())
+        print(outs)
 
         # 初始化存储得分、边界框和关键点的列表
         scores_list, bboxes_list, kpss_list = [], [], []
@@ -503,6 +507,27 @@ class SCRFD():
         # 将 BGR 格式转换为 RGB 格式，因为 matplotlib 使用 RGB
         outimg = cv2.cvtColor(srcimg, cv2.COLOR_BGR2RGB)
         return outimg, corner_points_list
+    def test_detect(self, srcimg):
+        """
+        对输入图像进行目标检测，返回绘制后的图片和检测目标四个角点的坐标。
+
+        :param srcimg: 输入的原始图像
+        :return: 包含绘制后的图片和检测目标四个角点坐标列表的列表，格式为 [outimg, corner_points_list]
+        """
+        
+        # 调整输入图像的大小，并获取调整后的图像信息和填充量
+        img, newh, neww, padh, padw = self.resize_image(srcimg)
+        # 将调整后的图像转换为适合网络输入的 blob 格式
+        # blob 是一个常见术语。blob 是 “Binary Large Object” 的缩写，
+        # blob指的是二进制大对象，在深度学习中，它通常代表经过特定处理、适合神经网络输入的多维数组。
+        blob = cv2.dnn.blobFromImage(img, 1.0 / 128, (self.inpWidth, self.inpHeight), (127.5, 127.5, 127.5),
+                                     swapRB=True)
+        # 将 blob 数据设置为网络的输入
+        self.net.setInput(blob)
+
+        # 执行前向传播，获取网络输出层的输出结果
+        outs = self.net.forward(self.net.getUnconnectedOutLayersNames())
+        print(outs)
 
 def order_corner_points(pts):
     """
@@ -537,3 +562,11 @@ def order_corner_points(pts):
 
     # 将排序后的角点坐标转换为整数类型，并返回其列表形式
     return rect.astype(int).tolist()
+if __name__ == '__main__':
+    onnxmodel = resource_path('models/cv_resnet18_card_correction.onnx')# 使用资源路径获取模型文件路径
+    card_net = SCRFD(onnxmodel)
+    # outimg, corner_points_list = self.card_net.detect(frame)
+    # 图片文件路径
+    image_path = 'testimgs/1.png'
+    srcimg =  cv2.imread(image_path)
+    card_net.test_detect(srcimg)

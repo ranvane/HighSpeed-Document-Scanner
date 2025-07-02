@@ -13,7 +13,8 @@ from app_config import get_config, save_config,update_os_and_save_path
 # 从自定义配置界面模块中导入配置窗口类
 from config_ui import ConfigFrame  # 这是一个自定义的配置窗口类
 from datetime import datetime
-from utils import save_image,merge_images,save_pdf,save_multip_pdf,get_save_path,SCRFD,measure_time,load_icon,resource_path
+from utils import save_image,merge_images,save_pdf,save_multip_pdf,get_save_path,measure_time,load_icon,resource_path
+from card_correction_utils import card_correction
 
 
 # 获取当前脚本所在的目录
@@ -83,15 +84,14 @@ class Main_Frame(Main_Ui_Frame):
         update_os_and_save_path()# 根据系统更新操作系统、默认保存路径信息
 
         # 定义 ONNX 模型文件的路径
-        # onnxmodel = 'models/cv_resnet18_card_correction.onnx'
-        onnxmodel = resource_path('models/cv_resnet18_card_correction.onnx')# 使用资源路径获取模型文件路径
-        # 创建 SCRFD 类的实例，传入 ONNX 模型路径、置信度阈值和 NMS 阈值
-        self.card_net = SCRFD(onnxmodel)
+        # onnxmodel = 'models/card_correction.onnx'
+        onnxmodel = resource_path('models/card_correction.onnx')# 使用资源路径获取模型文件路径
+        # 创建 card_correction 类的实例，传入 ONNX 模型路径、置信度阈值和 NMS 阈值
+        self.card_net = card_correction(onnxmodel)
 
         # 打印是否使用 USB 摄像头的配置信息
-        logger.debug(self.config.getboolean('CAMERA', 'use_usb_camera'))
-        # 打印是否使用 USB 摄像头的配置信息
-        logger.debug(self.config.getboolean('CAMERA', 'use_usb_camera'))
+        logger.debug(f'是否使用 USB 摄像头:{self.config.getboolean('CAMERA', 'use_usb_camera')}')
+        
         if not self.config.getboolean('CAMERA', 'use_usb_camera'):
             self.switch_to_local_camera()
         else:
@@ -326,6 +326,8 @@ class Main_Frame(Main_Ui_Frame):
 
             # 从摄像头读取一帧图像，ret 表示是否成功读取，frame 为读取的图像帧
             ret, frame = self.camera_capture.read()
+            self.current_captured_frame=frame
+            
 
             if ret:  # 如果成功读取到图像帧
 
@@ -347,12 +349,13 @@ class Main_Frame(Main_Ui_Frame):
                         _frame = draw_boxes_on_image(_frame, _contour)
                     else:
                         logger.debug("未检测到轮廓")
-                # 减少不必要的 UI 更新
-                if last_processed_frame is None or not np.array_equal(_frame, last_processed_frame):
+                # # 减少不必要的 UI 更新
+                # if last_processed_frame is None or not np.array_equal(_frame, last_processed_frame):
                     
-                    last_processed_frame = _frame
-                    # 异步调用 update_bitmap 方法，确保在主线程中更新 UI
-                    wx.CallAfter(self.update_bitmap, _frame)
+                #     last_processed_frame = _frame
+                #     # 异步调用 update_bitmap 方法，确保在主线程中更新 UI
+                #     wx.CallAfter(self.update_bitmap, _frame)
+                wx.CallAfter(self.update_bitmap, _frame)
 
             # 计算从开始读取帧到当前的处理耗时
             elapsed = time.time() - start_time
@@ -626,24 +629,24 @@ class Main_Frame(Main_Ui_Frame):
             try:
 
                 frame = self.current_captured_frame
-                outimg, corner_points_list = self.card_net.detect(frame)
+                # outimg, corner_points_list = self.card_net.detect(frame)
+                # 调用 大模型 对读取的图像进行目标检测，返回提取好的图片
+                out= self.card_net.infer(frame)
 
-                if not corner_points_list:
+                if not out:
                     logger.warning("未检测到任何卡片")
                     wx.CallAfter(wx.MessageBox, "未检测到任何卡片", "提示", wx.OK | wx.ICON_INFORMATION)
                     return
 
-                logger.info(f"检测到 {len(corner_points_list)} 个卡片")
+                logger.info(f"检测到 {len(out)} 个卡片")
                 crops = []
-
-                for i, corner_points in enumerate(corner_points_list):
-                    points = np.array(corner_points)
-                    x, y, w, h = cv2.boundingRect(points)
-                    crops.append((x, y, w, h))
+                
+                for _out in out['OUTPUT_IMGS']:
+                    _out_rgb = cv2.cvtColor(_out, cv2.COLOR_BGR2RGB)
+                    crops.append(_out_rgb)
 
                 if crops:
-                    x, y, w, h = crops[0]
-                    cropped = frame[y:y + h, x:x + w]
+                    cropped = crops[0]
                     # cropped = cv2.resize(cropped, (800, 500)) # 保存为缩略图
 
                     if self.m_checkBox_saveByGroup.IsChecked():

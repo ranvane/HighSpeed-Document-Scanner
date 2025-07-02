@@ -194,3 +194,4 @@ out/
 *.build
 *.dist
 *.onefile-build
+testimgs
